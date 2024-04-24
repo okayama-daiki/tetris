@@ -1,4 +1,4 @@
-module tetirs
+module github.com/okayama-daiki/tetris
 
 go 1.21.6
 
