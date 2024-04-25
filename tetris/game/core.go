@@ -28,8 +28,8 @@ type Game struct {
 }
 
 func isCollided(board Board, mino Mino) bool {
-	for dy := 0; dy < len(mino.Shape); dy++ {
-		for dx := 0; dx < len(mino.Shape[dy]); dx++ {
+	for dy := range len(mino.Shape) {
+		for dx := range len(mino.Shape[dy]) {
 			if mino.Shape[dy][dx] == 0 {
 				continue
 			}
@@ -63,8 +63,8 @@ func (g *Game) Update() error {
 			g.CurrentMino = nextMino
 		}
 		g.CurrentMino.IsGrounded = true
-		for dy := 0; dy < len(g.CurrentMino.Shape); dy++ {
-			for dx := 0; dx < len(g.CurrentMino.Shape[dy]); dx++ {
+		for dy := range len(g.CurrentMino.Shape) {
+			for dx := range len(g.CurrentMino.Shape[dy]) {
 				if g.CurrentMino.Shape[dy][dx] == 0 {
 					continue
 				}
@@ -116,8 +116,8 @@ func (g *Game) Update() error {
 	switch {
 
 	case g.CurrentMino.IsGrounded && g.CurrentMino.BacklashFrame == 0:
-		for dy := 0; dy < len(g.CurrentMino.Shape); dy++ {
-			for dx := 0; dx < len(g.CurrentMino.Shape[dy]); dx++ {
+		for dy := range len(g.CurrentMino.Shape) {
+			for dx := range len(g.CurrentMino.Shape[dy]) {
 				if g.CurrentMino.Shape[dy][dx] == 0 {
 					continue
 				}
@@ -147,8 +147,8 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
 
-	for y := 0; y < HEIGHT+4; y++ {
-		for x := 0; x < WIDTH+2; x++ {
+	for y := range HEIGHT + 4 {
+		for x := range WIDTH + 2 {
 			if y == 0 && (x == 0 || x == WIDTH+1) || y == 1 && (x == 0 || x == WIDTH+1) {
 				continue
 			}
@@ -171,8 +171,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	ghostMino := g.CurrentMino
 	for ; !isCollided(g.Board, ghostMino.MoveDown()); ghostMino = ghostMino.MoveDown() {
 	}
-	for dy := 0; dy < len(ghostMino.Shape); dy++ {
-		for dx := 0; dx < len(ghostMino.Shape[dy]); dx++ {
+	for dy := range len(ghostMino.Shape) {
+		for dx := range len(ghostMino.Shape[dy]) {
 			if ghostMino.Shape[dy][dx] == 0 {
 				continue
 			}
@@ -189,8 +189,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Dropping mino
-	for dy := 0; dy < len(g.CurrentMino.Shape); dy++ {
-		for dx := 0; dx < len(g.CurrentMino.Shape[dy]); dx++ {
+	for dy := range len(g.CurrentMino.Shape) {
+		for dx := range len(g.CurrentMino.Shape[dy]) {
 			if g.CurrentMino.Shape[dy][dx] == 0 {
 				continue
 			}

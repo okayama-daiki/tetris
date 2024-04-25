@@ -34,8 +34,8 @@ func (m Mino) RotateRight() Mino {
 	for i := range m.Shape {
 		shape[i] = make([]int, len(m.Shape[i]))
 	}
-	for y := 0; y < len(m.Shape); y++ {
-		for x := 0; x < len(m.Shape[y]); x++ {
+	for y := range len(m.Shape) {
+		for x := range len(m.Shape[y]) {
 			shape[x][len(m.Shape)-1-y] = m.Shape[y][x]
 		}
 	}
@@ -48,8 +48,8 @@ func (m Mino) RotateLeft() Mino {
 	for i := range m.Shape {
 		shape[i] = make([]int, len(m.Shape[i]))
 	}
-	for y := 0; y < len(m.Shape); y++ {
-		for x := 0; x < len(m.Shape[y]); x++ {
+	for y := range len(m.Shape) {
+		for x := range len(m.Shape[y]) {
 			shape[len(m.Shape)-1-x][y] = m.Shape[y][x]
 		}
 	}
@@ -177,7 +177,7 @@ func (b *MinoBag) Next() Mino {
 	if len(b.bag) == 0 {
 		b.bag = make([]Mino, len(Minos))
 		copy(b.bag, Minos)
-		for i := 0; i < len(b.bag); i++ {
+		for i := range len(b.bag) {
 			j := rand.Intn(i + 1)
 			b.bag[i], b.bag[j] = b.bag[j], b.bag[i]
 		}

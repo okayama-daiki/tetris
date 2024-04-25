@@ -17,11 +17,11 @@ func IsFilled(row Row) bool {
 }
 
 func (b *Board) Init() {
-	for y := 0; y < HEIGHT+4; y++ {
+	for y := range HEIGHT + 4 {
 		b[y][0] = Wall
 		b[y][WIDTH+1] = Wall
 	}
-	for i := 0; i < WIDTH+2; i++ {
+	for i := range WIDTH + 2 {
 		b[HEIGHT+3][i] = Wall
 	}
 }
