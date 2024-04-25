@@ -1,6 +1,6 @@
 module github.com/okayama-daiki/tetris
 
-go 1.21.6
+go 1.22.2
 
 require github.com/hajimehoshi/ebiten/v2 v2.7.2
 
