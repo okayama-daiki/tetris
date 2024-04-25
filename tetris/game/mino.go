@@ -29,7 +29,7 @@ type HoldingMino struct {
 	Available bool
 }
 
-func (m *Mino) RotateRight() Mino {
+func (m Mino) RotateRight() Mino {
 	shape := make(Shape, len(m.Shape))
 	for i := range m.Shape {
 		shape[i] = make([]int, len(m.Shape[i]))
@@ -39,18 +39,11 @@ func (m *Mino) RotateRight() Mino {
 			shape[x][len(m.Shape)-1-y] = m.Shape[y][x]
 		}
 	}
-	return Mino{
-		Shape:      shape,
-		Name:       m.Name,
-		Color:      m.Color,
-		IsGrounded: m.IsGrounded,
-		Y:          m.Y,
-		X:          m.X,
-		Angle:      (m.Angle + 1) % 4,
-	}
+	m.Shape = shape
+	return m
 }
 
-func (m *Mino) RotateLeft() Mino {
+func (m Mino) RotateLeft() Mino {
 	shape := make(Shape, len(m.Shape))
 	for i := range m.Shape {
 		shape[i] = make([]int, len(m.Shape[i]))
@@ -60,59 +53,23 @@ func (m *Mino) RotateLeft() Mino {
 			shape[len(m.Shape)-1-x][y] = m.Shape[y][x]
 		}
 	}
-	return Mino{
-		Shape:         shape,
-		Name:          m.Name,
-		Color:         m.Color,
-		IsGrounded:    m.IsGrounded,
-		Y:             m.Y,
-		X:             m.X,
-		Angle:         (m.Angle + 3) % 4,
-		FrameCount:    m.FrameCount,
-		BacklashFrame: m.BacklashFrame,
-	}
+	m.Shape = shape
+	return m
 }
 
-func (m *Mino) MoveRight() Mino {
-	return Mino{
-		Shape:         m.Shape,
-		Name:          m.Name,
-		Color:         m.Color,
-		IsGrounded:    m.IsGrounded,
-		Y:             m.Y,
-		X:             m.X + 1,
-		Angle:         m.Angle,
-		FrameCount:    m.FrameCount,
-		BacklashFrame: m.BacklashFrame,
-	}
+func (m Mino) MoveRight() Mino {
+	m.X++
+	return m
 }
 
-func (m *Mino) MoveLeft() Mino {
-	return Mino{
-		Shape:         m.Shape,
-		Name:          m.Name,
-		Color:         m.Color,
-		IsGrounded:    m.IsGrounded,
-		Y:             m.Y,
-		X:             m.X - 1,
-		Angle:         m.Angle,
-		FrameCount:    m.FrameCount,
-		BacklashFrame: m.BacklashFrame,
-	}
+func (m Mino) MoveLeft() Mino {
+	m.X--
+	return m
 }
 
-func (m *Mino) MoveDown() Mino {
-	return Mino{
-		Shape:         m.Shape,
-		Name:          m.Name,
-		Color:         m.Color,
-		IsGrounded:    m.IsGrounded,
-		Y:             m.Y + 1,
-		X:             m.X,
-		Angle:         m.Angle,
-		FrameCount:    m.FrameCount,
-		BacklashFrame: m.BacklashFrame,
-	}
+func (m Mino) MoveDown() Mino {
+	m.Y++
+	return m
 }
 
 var (
