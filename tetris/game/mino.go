@@ -160,30 +160,38 @@ var (
 	Minos = []Mino{T, O, L, J, S, Z, I}
 )
 
-type MinoIterator interface {
-	HasNext() bool
-	Next() Mino
-}
-
 type MinoBag struct {
-	bag []Mino
+	queue []Mino
 }
 
-func (b *MinoBag) HasNext() bool {
-	return true
+func (b *MinoBag) fill() {
+	bag := make([]Mino, len(Minos))
+	copy(bag, Minos)
+	for i := range len(bag) {
+		j := rand.Intn(i + 1)
+		bag[i], bag[j] = bag[j], bag[i]
+	}
+	b.queue = append(b.queue, bag...)
+}
+
+func (b *MinoBag) Sniff(n int) []Mino {
+	if n <= 0 || n > 7 {
+		panic("n must be between 1 and 7")
+	}
+	if len(b.queue) < n {
+		b.fill()
+	}
+	preview := make([]Mino, n)
+	copy(preview, b.queue[:n])
+	return preview
 }
 
 func (b *MinoBag) Next() Mino {
-	if len(b.bag) == 0 {
-		b.bag = make([]Mino, len(Minos))
-		copy(b.bag, Minos)
-		for i := range len(b.bag) {
-			j := rand.Intn(i + 1)
-			b.bag[i], b.bag[j] = b.bag[j], b.bag[i]
-		}
+	if len(b.queue) == 0 {
+		b.fill()
 	}
-	mino := b.bag[0]
-	b.bag = b.bag[1:]
+	mino := b.queue[0]
 	mino.Y, mino.X = 0, 4
+	b.queue = b.queue[1:]
 	return mino
 }
