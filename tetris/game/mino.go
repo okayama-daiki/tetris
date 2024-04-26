@@ -29,7 +29,8 @@ type HoldingMino struct {
 	Available bool
 }
 
-func (m Mino) RotateRight() Mino {
+// Rotate the mino 90 degrees clockwise
+func (m Mino) rotateRight() Mino {
 	shape := make(Shape, len(m.Shape))
 	for i := range m.Shape {
 		shape[i] = make([]int, len(m.Shape[i]))
@@ -40,10 +41,12 @@ func (m Mino) RotateRight() Mino {
 		}
 	}
 	m.Shape = shape
+	m.Angle = (m.Angle + 1) % 4
 	return m
 }
 
-func (m Mino) RotateLeft() Mino {
+// Rotate the mino 90 degrees counterclockwise
+func (m Mino) rotateLeft() Mino {
 	shape := make(Shape, len(m.Shape))
 	for i := range m.Shape {
 		shape[i] = make([]int, len(m.Shape[i]))
@@ -54,7 +57,180 @@ func (m Mino) RotateLeft() Mino {
 		}
 	}
 	m.Shape = shape
+	m.Angle = (m.Angle + 3) % 4
 	return m
+}
+
+// Return all possible rotations of the mino in the Super Rotation System
+//
+// TODO: This function must be rewritten as `func(yield func(Mino) bool)` ...
+// and used as Range Over Function after Go 1.23 is released
+func (m Mino) RotateRightSRS() []Mino {
+	switch m.Name {
+	case "T", "L", "J", "S", "Z":
+		switch m.Angle {
+		case 0:
+			return []Mino{
+				m.rotateRight(),
+				m.rotateRight().MoveLeft(),
+				m.rotateRight().MoveLeft().MoveUp(),
+				m.rotateRight().MoveDown().MoveDown(),
+				m.rotateRight().MoveLeft().MoveDown().MoveDown(),
+			}
+		case 1:
+			return []Mino{
+				m.rotateRight(),
+				m.rotateRight().MoveRight(),
+				m.rotateRight().MoveRight().MoveDown(),
+				m.rotateRight().MoveUp().MoveUp(),
+				m.rotateRight().MoveRight().MoveUp().MoveUp(),
+			}
+		case 2:
+			return []Mino{
+				m.rotateRight(),
+				m.rotateRight().MoveRight(),
+				m.rotateRight().MoveRight().MoveUp(),
+				m.rotateRight().MoveDown().MoveDown(),
+				m.rotateRight().MoveRight().MoveDown().MoveDown(),
+			}
+		case 3:
+			return []Mino{
+				m.rotateRight(),
+				m.rotateRight().MoveLeft(),
+				m.rotateRight().MoveLeft().MoveDown(),
+				m.rotateRight().MoveUp().MoveUp(),
+				m.rotateRight().MoveLeft().MoveUp().MoveUp(),
+			}
+
+		default:
+			panic("Invalid angle")
+		}
+	case "I":
+		switch m.Angle {
+		case 0:
+			return []Mino{
+				m.rotateRight(),
+				m.rotateRight().MoveLeft().MoveLeft(),
+				m.rotateRight().MoveRight(),
+				m.rotateRight().MoveLeft().MoveLeft().MoveDown(),
+				m.rotateRight().MoveRight().MoveUp().MoveUp(),
+			}
+		case 1:
+			return []Mino{
+				m.rotateRight(),
+				m.rotateRight().MoveLeft(),
+				m.rotateRight().MoveRight().MoveRight(),
+				m.rotateRight().MoveLeft().MoveUp().MoveUp(),
+				m.rotateRight().MoveRight().MoveRight().MoveDown(),
+			}
+		case 2:
+			return []Mino{
+				m.rotateRight(),
+				m.rotateRight().MoveRight().MoveRight(),
+				m.rotateRight().MoveLeft(),
+				m.rotateRight().MoveRight().MoveRight().MoveUp(),
+				m.rotateRight().MoveLeft().MoveDown().MoveDown(),
+			}
+		case 3:
+			return []Mino{
+				m.rotateRight(),
+				m.rotateRight().MoveLeft().MoveLeft(),
+				m.rotateRight().MoveRight(),
+				m.rotateRight().MoveLeft().MoveDown().MoveDown(),
+				m.rotateRight().MoveRight().MoveUp().MoveUp(),
+			}
+		default:
+			panic("Invalid angle")
+		}
+	case "O":
+		return []Mino{m}
+	default:
+		panic("Invalid mino name")
+	}
+}
+
+// Return all possible rotations of the mino in the Super Rotation System
+func (m Mino) RotateLeftSSR() []Mino {
+	switch m.Name {
+	case "T", "L", "J", "S", "Z":
+		switch m.Angle {
+		case 0:
+			return []Mino{
+				m.rotateLeft(),
+				m.rotateLeft().MoveRight(),
+				m.rotateLeft().MoveRight().MoveUp(),
+				m.rotateLeft().MoveDown().MoveDown(),
+				m.rotateLeft().MoveRight().MoveDown().MoveDown(),
+			}
+		case 1:
+			return []Mino{
+				m.rotateLeft(),
+				m.rotateLeft().MoveRight(),
+				m.rotateLeft().MoveRight().MoveDown(),
+				m.rotateLeft().MoveUp().MoveUp(),
+				m.rotateLeft().MoveRight().MoveUp().MoveUp(),
+			}
+		case 2:
+			return []Mino{
+				m.rotateLeft(),
+				m.rotateLeft().MoveLeft(),
+				m.rotateLeft().MoveLeft().MoveUp(),
+				m.rotateLeft().MoveDown().MoveDown(),
+				m.rotateLeft().MoveLeft().MoveDown().MoveDown(),
+			}
+		case 3:
+			return []Mino{
+				m.rotateLeft(),
+				m.rotateLeft().MoveLeft(),
+				m.rotateLeft().MoveLeft().MoveDown(),
+				m.rotateLeft().MoveUp().MoveUp(),
+				m.rotateLeft().MoveLeft().MoveUp().MoveUp(),
+			}
+		default:
+			panic("Invalid angle")
+		}
+	case "I":
+		switch m.Angle {
+		case 0:
+			return []Mino{
+				m.rotateLeft(),
+				m.rotateLeft().MoveLeft(),
+				m.rotateLeft().MoveRight().MoveRight(),
+				m.rotateLeft().MoveLeft().MoveUp().MoveUp(),
+				m.rotateLeft().MoveRight().MoveRight().MoveDown(),
+			}
+		case 1:
+			return []Mino{
+				m.rotateLeft(),
+				m.rotateLeft().MoveRight().MoveRight(),
+				m.rotateLeft().MoveLeft(),
+				m.rotateLeft().MoveRight().MoveRight().MoveUp(),
+				m.rotateLeft().MoveLeft().MoveDown().MoveDown(),
+			}
+		case 2:
+			return []Mino{
+				m.rotateLeft(),
+				m.rotateLeft().MoveRight().MoveRight(),
+				m.rotateLeft().MoveLeft(),
+				m.rotateLeft().MoveRight().MoveRight().MoveUp(),
+				m.rotateLeft().MoveLeft().MoveDown().MoveDown(),
+			}
+		case 3:
+			return []Mino{
+				m.rotateLeft(),
+				m.rotateLeft().MoveRight(),
+				m.rotateLeft().MoveLeft().MoveLeft(),
+				m.rotateLeft().MoveLeft().MoveLeft().MoveDown(),
+				m.rotateLeft().MoveRight().MoveUp().MoveUp(),
+			}
+		default:
+			panic("Invalid angle")
+		}
+	case "O":
+		return []Mino{m}
+	default:
+		panic("Invalid mino name")
+	}
 }
 
 func (m Mino) MoveRight() Mino {
@@ -69,6 +245,11 @@ func (m Mino) MoveLeft() Mino {
 
 func (m Mino) MoveDown() Mino {
 	m.Y++
+	return m
+}
+
+func (m Mino) MoveUp() Mino {
+	m.Y--
 	return m
 }
 

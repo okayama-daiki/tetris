@@ -97,18 +97,22 @@ func (g *Game) Update() error {
 
 	// Rotate right
 	case inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) || inpututil.IsKeyJustPressed(ebiten.KeyX):
-		nextMino := g.CurrentMino.RotateRight()
-		if !isCollided(g.Board, nextMino) {
-			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
-			g.CurrentMino = nextMino
+		for _, nextMino := range g.CurrentMino.RotateRightSRS() {
+			if !isCollided(g.Board, nextMino) {
+				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
+				g.CurrentMino = nextMino
+				break
+			}
 		}
 
 	// Rotate left
 	case inpututil.IsKeyJustPressed(ebiten.KeyZ):
-		nextMino := g.CurrentMino.RotateLeft()
-		if !isCollided(g.Board, nextMino) {
-			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
-			g.CurrentMino = nextMino
+		for _, nextMino := range g.CurrentMino.RotateLeftSSR() {
+			if !isCollided(g.Board, nextMino) {
+				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
+				g.CurrentMino = nextMino
+				break
+			}
 		}
 
 	// Soft drop
