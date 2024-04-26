@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	ebiten.SetWindowSize(game.CELL_SIZE*(game.WIDTH+2), game.CELL_SIZE*(game.HEIGHT+4))
+	ebiten.SetWindowSize(600, 600)
 	ebiten.SetWindowTitle("EbiTetris")
 
 	var minoBag = game.MinoBag{}
