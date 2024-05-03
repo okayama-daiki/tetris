@@ -2,7 +2,12 @@ package game
 
 import "image/color"
 
-var Wall = color.RGBA{108, 122, 137, 255}
+var (
+	Wall             = color.RGBA{108, 122, 137, 255}
+	BACKGROUND_COLOR = color.RGBA{5, 5, 5, 255}
+	LINE_COLOR       = color.RGBA{75, 75, 75, 255}
+	BORDER_COLOR     = color.RGBA{240, 240, 240, 255}
+)
 
 type Row = [WIDTH + 2]color.Color
 type Board [HEIGHT + 4]Row

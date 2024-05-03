@@ -5,6 +5,10 @@ import (
 	"math/rand"
 )
 
+var (
+	GHOST_COLOR = color.RGBA{30, 30, 30, 127}
+)
+
 const (
 	DEFAULT_BACKLASH_FRAME = 30
 )
@@ -261,7 +265,7 @@ var (
 			{0, 0, 0},
 		},
 		Name:          "T",
-		Color:         color.RGBA{128, 0, 128, 255},
+		Color:         color.RGBA{106, 50, 165, 255}, // Purple
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
@@ -272,7 +276,7 @@ var (
 			{1, 1},
 		},
 		Name:          "O",
-		Color:         color.RGBA{255, 255, 0, 255},
+		Color:         color.RGBA{255, 213, 0, 255}, // Yellow
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
@@ -284,7 +288,7 @@ var (
 			{0, 0, 0},
 		},
 		Name:          "L",
-		Color:         color.RGBA{255, 127, 0, 255},
+		Color:         color.RGBA{255, 121, 28, 255}, // Orange
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
@@ -296,7 +300,7 @@ var (
 			{0, 0, 0},
 		},
 		Name:          "J",
-		Color:         color.RGBA{0, 0, 255, 255},
+		Color:         color.RGBA{6, 119, 186, 255}, // Blue
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
@@ -308,7 +312,7 @@ var (
 			{0, 0, 0},
 		},
 		Name:          "S",
-		Color:         color.RGBA{0, 255, 0, 255},
+		Color:         color.RGBA{114, 203, 59, 255}, // Green
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
@@ -320,7 +324,7 @@ var (
 			{0, 0, 0},
 		},
 		Name:          "Z",
-		Color:         color.RGBA{255, 0, 0, 255},
+		Color:         color.RGBA{212, 42, 52, 255}, // Red
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
@@ -333,7 +337,7 @@ var (
 			{0, 0, 0, 0},
 		},
 		Name:          "I",
-		Color:         color.RGBA{0, 255, 255, 255},
+		Color:         color.RGBA{31, 195, 205, 255}, // Cyan
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
