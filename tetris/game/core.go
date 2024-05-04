@@ -46,8 +46,15 @@ func isCollided(board Board, mino Mino) bool {
 }
 
 func (g *Game) Update() error {
+
+	if g.CurrentMino.Name == "" {
+		g.CurrentMino = g.MinoBag.Next()
+		return nil
+	}
+
 	g.FrameCount++
 	g.CurrentMino.FrameCount++
+	g.CurrentMino.LockDown.UpdateTimer()
 	g.CurrentDroppingSpeed = g.NormalDroppingSpeed
 
 	switch {
@@ -67,14 +74,7 @@ func (g *Game) Update() error {
 			g.CurrentMino = nextMino
 		}
 		g.CurrentMino.IsGrounded = true
-		for dy := range len(g.CurrentMino.Shape) {
-			for dx := range len(g.CurrentMino.Shape[dy]) {
-				if g.CurrentMino.Shape[dy][dx] == 0 {
-					continue
-				}
-				g.Board[g.CurrentMino.Y+dy][g.CurrentMino.X+dx] = g.CurrentMino.Color
-			}
-		}
+		g.Board.Fix(&g.CurrentMino)
 		g.Board.ClearLines()
 		g.CurrentMino = g.MinoBag.Next()
 		g.HoldingMino.Available = true
@@ -84,6 +84,8 @@ func (g *Game) Update() error {
 		nextMino := g.CurrentMino.MoveLeft()
 		if !isCollided(g.Board, nextMino) {
 			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
+			nextMino.IsGrounded = false
+			nextMino.LockDown.UpdateCounter()
 			g.CurrentMino = nextMino
 		}
 
@@ -92,6 +94,8 @@ func (g *Game) Update() error {
 		nextMino := g.CurrentMino.MoveRight()
 		if !isCollided(g.Board, nextMino) {
 			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
+			nextMino.IsGrounded = false
+			nextMino.LockDown.UpdateCounter()
 			g.CurrentMino = nextMino
 		}
 
@@ -100,6 +104,8 @@ func (g *Game) Update() error {
 		for _, nextMino := range g.CurrentMino.RotateRightSRS() {
 			if !isCollided(g.Board, nextMino) {
 				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
+				nextMino.IsGrounded = false
+				nextMino.LockDown.UpdateCounter()
 				g.CurrentMino = nextMino
 				break
 			}
@@ -110,6 +116,8 @@ func (g *Game) Update() error {
 		for _, nextMino := range g.CurrentMino.RotateLeftSSR() {
 			if !isCollided(g.Board, nextMino) {
 				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
+				nextMino.IsGrounded = false
+				nextMino.LockDown.UpdateCounter()
 				g.CurrentMino = nextMino
 				break
 			}
@@ -118,34 +126,28 @@ func (g *Game) Update() error {
 	// Soft drop
 	case inpututil.KeyPressDuration(ebiten.KeyDown) > 0:
 		g.CurrentDroppingSpeed = g.NormalDroppingSpeed / 20
-
 	}
 
 	switch {
 
-	case g.CurrentMino.IsGrounded && g.CurrentMino.BacklashFrame == 0:
-		for dy := range len(g.CurrentMino.Shape) {
-			for dx := range len(g.CurrentMino.Shape[dy]) {
-				if g.CurrentMino.Shape[dy][dx] == 0 {
-					continue
-				}
-				g.Board[g.CurrentMino.Y+dy][g.CurrentMino.X+dx] = g.CurrentMino.Color
-			}
+	case g.CurrentMino.LockDown.IsFixed():
+		for nextMino := g.CurrentMino.MoveDown(); !isCollided(g.Board, nextMino); nextMino = nextMino.MoveDown() {
+			g.CurrentMino = nextMino
 		}
+		g.Board.Fix(&g.CurrentMino)
 		g.Board.ClearLines()
 		g.CurrentMino = g.MinoBag.Next()
 		g.HoldingMino.Available = true
 
-	case g.CurrentMino.IsGrounded:
-		g.CurrentMino.BacklashFrame--
-
 	case g.CurrentMino.FrameCount%g.CurrentDroppingSpeed == 0:
 		nextMino := g.CurrentMino.MoveDown()
-		if isCollided(g.Board, nextMino) {
-			g.CurrentMino.IsGrounded = true
-		} else {
+		if !isCollided(g.Board, nextMino) {
+			nextMino.IsGrounded = false
 			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
+			nextMino.LockDown.Reset()
 			g.CurrentMino = nextMino
+		} else {
+			g.CurrentMino.LockDown.Activate()
 		}
 	}
 

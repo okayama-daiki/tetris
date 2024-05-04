@@ -12,14 +12,13 @@ func main() {
 	ebiten.SetWindowTitle("EbiTetris")
 
 	var minoBag = game.MinoBag{}
-	var currentMino = game.Mino{IsGrounded: true}
+
 	var holdingMino = game.HoldingMino{Available: true}
 	var board = game.Board{}
 	board.Init()
 
 	var game = game.Game{
 		MinoBag:              minoBag,
-		CurrentMino:          currentMino,
 		HoldingMino:          holdingMino,
 		Board:                board,
 		NormalDroppingSpeed:  60,

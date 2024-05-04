@@ -21,6 +21,17 @@ func IsFilled(row Row) bool {
 	return true
 }
 
+func (b *Board) Fix(mino *Mino) {
+	for dy := range len(mino.Shape) {
+		for dx := range len(mino.Shape[dy]) {
+			if mino.Shape[dy][dx] == 0 {
+				continue
+			}
+			b[mino.Y+dy][mino.X+dx] = mino.Color
+		}
+	}
+}
+
 func (b *Board) Init() {
 	for y := range HEIGHT + 4 {
 		b[y][0] = Wall

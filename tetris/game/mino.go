@@ -10,12 +10,22 @@ var (
 )
 
 const (
-	DEFAULT_BACKLASH_FRAME = 30
+	DEFAULT_BACKLASH_FRAME           = 30
+	DEFAULT_EXTENDED_PLACEMENT_COUNT = 15
 )
 
 type Shape [][]int
 
-// Note: the Mino is fully fixed if IsGrounded is true and BacklashFrame is 0
+func (s Shape) deepCopy() Shape {
+	shape := make(Shape, len(s))
+	for i := range s {
+		shape[i] = make([]int, len(s[i]))
+		copy(shape[i], s[i])
+	}
+	return shape
+}
+
+// Note: the Mino is fully fixed if IsGrounded is true and BacklashFrame is 0 or ExtendedPlacementCounter is 0
 type Mino struct {
 	Name          string
 	Shape         Shape
@@ -24,6 +34,7 @@ type Mino struct {
 	X             int
 	Angle         int
 	FrameCount    int
+	LockDown      LockDown
 	IsGrounded    bool
 	BacklashFrame int // Allow a little time for movement / rotation after grounding
 }
@@ -239,21 +250,25 @@ func (m Mino) RotateLeftSSR() []Mino {
 
 func (m Mino) MoveRight() Mino {
 	m.X++
+	m.Shape = m.Shape.deepCopy()
 	return m
 }
 
 func (m Mino) MoveLeft() Mino {
 	m.X--
+	m.Shape = m.Shape.deepCopy()
 	return m
 }
 
 func (m Mino) MoveDown() Mino {
 	m.Y++
+	m.Shape = m.Shape.deepCopy()
 	return m
 }
 
 func (m Mino) MoveUp() Mino {
 	m.Y--
+	m.Shape = m.Shape.deepCopy()
 	return m
 }
 
@@ -379,4 +394,44 @@ func (b *MinoBag) Next() Mino {
 	mino.Y, mino.X = 0, 4
 	b.queue = b.queue[1:]
 	return mino
+}
+
+// An implementation of the extended placement system
+//   - After a mino is grounded, `isGrounded` flag is set to true then the `timer` and `counter` are started
+//   - `timer` is incremented every frame until it reaches `DEFAULT_BACKLASH_FRAME`
+//   - If the mino is moved or rotated, `timer` is reset, but `counter` is incremented
+//   - The mino is fixed if `timer` reaches `DEFAULT_BACKLASH_FRAME` or
+//     `counter` reaches `DEFAULT_EXTENDED_PLACEMENT_COUNT` even though `timer` is less than `DEFAULT_BACKLASH_FRAME`
+type LockDown struct {
+	isGrounded bool
+	timer      int
+	counter    int
+}
+
+// Return true if the mino should not be moved or rotated anymore
+func (l *LockDown) IsFixed() bool {
+	return (l.isGrounded && l.timer >= DEFAULT_BACKLASH_FRAME) || l.counter >= DEFAULT_EXTENDED_PLACEMENT_COUNT
+}
+
+func (l *LockDown) Activate() {
+	l.isGrounded = true
+}
+
+func (l *LockDown) UpdateCounter() {
+	if l.isGrounded {
+		l.counter++
+		l.timer = 0
+	}
+}
+
+func (l *LockDown) UpdateTimer() {
+	if l.isGrounded {
+		l.timer++
+	}
+}
+
+func (l *LockDown) Reset() {
+	l.isGrounded = false
+	l.timer = 0
+	l.counter = 0
 }
