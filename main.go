@@ -14,8 +14,7 @@ func main() {
 	var minoBag = game.MinoBag{}
 
 	var holdingMino = game.HoldingMino{Available: true}
-	var board = game.Board{}
-	board.Init()
+	var board = game.MakeBoard()
 
 	var game = game.Game{
 		MinoBag:              minoBag,

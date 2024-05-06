@@ -9,10 +9,16 @@ import (
 )
 
 const (
-	HEIGHT    = 20
-	WIDTH     = 10
+	INNER_HEIGHT = 20
+	INNER_WIDTH  = 10
+	SENTINEL     = 1
+	MARGIN       = 3
+	OUTER_HEIGHT = MARGIN + INNER_HEIGHT + SENTINEL
+	OUTER_WIDTH  = SENTINEL + INNER_WIDTH + SENTINEL
+)
+
+const (
 	CELL_SIZE = 25
-	MARGIN    = 0.5
 )
 
 type Game struct {
@@ -25,24 +31,6 @@ type Game struct {
 	CurrentMino          Mino
 	HoldingMino          HoldingMino
 	MinoBag              MinoBag
-}
-
-func isCollided(board Board, mino Mino) bool {
-	for dy := range len(mino.Shape) {
-		for dx := range len(mino.Shape[dy]) {
-			if mino.Shape[dy][dx] == 0 {
-				continue
-			}
-			ny, nx := mino.Y+dy, mino.X+dx
-			if ny < 0 || ny >= HEIGHT+4 || nx < 0 || nx >= WIDTH+2 {
-				return true
-			}
-			if board[ny][nx] != nil || board[ny][nx] == Wall {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func (g *Game) Update() error {
@@ -70,7 +58,7 @@ func (g *Game) Update() error {
 
 	// Hard drop
 	case inpututil.IsKeyJustPressed(ebiten.KeySpace):
-		for nextMino := g.CurrentMino.MoveDown(); !isCollided(g.Board, nextMino); nextMino = nextMino.MoveDown() {
+		for nextMino := g.CurrentMino.MoveDown(); !g.Board.isCollided(nextMino); nextMino = nextMino.MoveDown() {
 			g.CurrentMino = nextMino
 		}
 		g.CurrentMino.IsGrounded = true
@@ -82,7 +70,7 @@ func (g *Game) Update() error {
 	// Move Left
 	case inpututil.KeyPressDuration(ebiten.KeyLeft) > 9 && inpututil.KeyPressDuration(ebiten.KeyLeft)%2 == 0 || inpututil.IsKeyJustPressed(ebiten.KeyLeft):
 		nextMino := g.CurrentMino.MoveLeft()
-		if !isCollided(g.Board, nextMino) {
+		if !g.Board.isCollided(nextMino) {
 			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
 			nextMino.IsGrounded = false
 			nextMino.LockDown.UpdateCounter()
@@ -92,7 +80,7 @@ func (g *Game) Update() error {
 	// Move Right
 	case inpututil.KeyPressDuration(ebiten.KeyRight) > 9 && inpututil.KeyPressDuration(ebiten.KeyRight)%2 == 0 || inpututil.IsKeyJustPressed(ebiten.KeyRight):
 		nextMino := g.CurrentMino.MoveRight()
-		if !isCollided(g.Board, nextMino) {
+		if !g.Board.isCollided(nextMino) {
 			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
 			nextMino.IsGrounded = false
 			nextMino.LockDown.UpdateCounter()
@@ -102,7 +90,7 @@ func (g *Game) Update() error {
 	// Rotate right
 	case inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) || inpututil.IsKeyJustPressed(ebiten.KeyX):
 		for _, nextMino := range g.CurrentMino.RotateRightSRS() {
-			if !isCollided(g.Board, nextMino) {
+			if !g.Board.isCollided(nextMino) {
 				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
 				nextMino.IsGrounded = false
 				nextMino.LockDown.UpdateCounter()
@@ -114,7 +102,7 @@ func (g *Game) Update() error {
 	// Rotate left
 	case inpututil.IsKeyJustPressed(ebiten.KeyZ):
 		for _, nextMino := range g.CurrentMino.RotateLeftSSR() {
-			if !isCollided(g.Board, nextMino) {
+			if !g.Board.isCollided(nextMino) {
 				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
 				nextMino.IsGrounded = false
 				nextMino.LockDown.UpdateCounter()
@@ -131,7 +119,7 @@ func (g *Game) Update() error {
 	switch {
 
 	case g.CurrentMino.LockDown.IsFixed():
-		for nextMino := g.CurrentMino.MoveDown(); !isCollided(g.Board, nextMino); nextMino = nextMino.MoveDown() {
+		for nextMino := g.CurrentMino.MoveDown(); !g.Board.isCollided(nextMino); nextMino = nextMino.MoveDown() {
 			g.CurrentMino = nextMino
 		}
 		g.Board.Fix(&g.CurrentMino)
@@ -141,7 +129,7 @@ func (g *Game) Update() error {
 
 	case g.CurrentMino.FrameCount%g.CurrentDroppingSpeed == 0:
 		nextMino := g.CurrentMino.MoveDown()
-		if !isCollided(g.Board, nextMino) {
+		if !g.Board.isCollided(nextMino) {
 			nextMino.IsGrounded = false
 			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
 			nextMino.LockDown.Reset()
@@ -154,7 +142,8 @@ func (g *Game) Update() error {
 	return nil
 }
 
-func drawBlock(screen *ebiten.Image, x, y int, c color.Color, size, margin float32) {
+func drawBlock(screen *ebiten.Image, x, y int, c color.Color, size float32) {
+	var margin float32 = 0.5
 	r, g, b, _ := c.RGBA()
 
 	vector.DrawFilledRect(
@@ -190,20 +179,20 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(BACKGROUND_COLOR)
 
 	var (
-		boardWidth  = CELL_SIZE * (WIDTH + 2)
-		boardHeight = CELL_SIZE * (HEIGHT + 4)
+		boardWidth  = CELL_SIZE * OUTER_WIDTH
+		boardHeight = CELL_SIZE * OUTER_HEIGHT
 	)
 
 	boardScreen := ebiten.NewImage(boardWidth, boardHeight)
 	boardScreen.Fill(BACKGROUND_COLOR)
 
 	// Horizontal Lines
-	for y := 2; y < HEIGHT+3; y++ {
+	for y := MARGIN; y < OUTER_HEIGHT; y++ {
 		vector.StrokeLine(
 			boardScreen,
 			CELL_SIZE,
 			float32(y*CELL_SIZE)+2,
-			float32(WIDTH+1)*CELL_SIZE,
+			float32(INNER_WIDTH+SENTINEL)*CELL_SIZE,
 			float32(y*CELL_SIZE)+2,
 			0.5,
 			LINE_COLOR,
@@ -212,13 +201,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Vertical Lines
-	for x := 0; x < WIDTH+2; x++ {
+	for x := range OUTER_WIDTH {
 		vector.StrokeLine(
 			boardScreen,
 			float32(x*CELL_SIZE),
-			2*CELL_SIZE,
+			MARGIN*CELL_SIZE,
 			float32(x*CELL_SIZE),
-			float32(HEIGHT+3)*CELL_SIZE,
+			float32(MARGIN+INNER_HEIGHT)*CELL_SIZE,
 			0.5,
 			LINE_COLOR,
 			true,
@@ -229,19 +218,19 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	vector.StrokeLine(
 		boardScreen,
 		CELL_SIZE,
-		2*CELL_SIZE,
+		MARGIN*CELL_SIZE,
 		CELL_SIZE,
-		float32(HEIGHT+3)*CELL_SIZE,
+		float32(MARGIN+INNER_HEIGHT)*CELL_SIZE,
 		2,
 		BORDER_COLOR,
 		true,
 	)
 	vector.StrokeLine(
 		boardScreen,
-		float32(WIDTH+1)*CELL_SIZE,
-		2*CELL_SIZE,
-		float32(WIDTH+1)*CELL_SIZE,
-		float32(HEIGHT+3)*CELL_SIZE,
+		float32(SENTINEL+INNER_WIDTH)*CELL_SIZE,
+		MARGIN*CELL_SIZE,
+		float32(SENTINEL+INNER_WIDTH)*CELL_SIZE,
+		float32(MARGIN+INNER_HEIGHT)*CELL_SIZE,
 		2,
 		BORDER_COLOR,
 		true,
@@ -249,34 +238,34 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	vector.StrokeLine(
 		boardScreen,
 		CELL_SIZE,
-		float32(HEIGHT+3)*CELL_SIZE,
-		float32(WIDTH+1)*CELL_SIZE,
-		float32(HEIGHT+3)*CELL_SIZE,
+		float32(MARGIN+INNER_HEIGHT)*CELL_SIZE,
+		float32(INNER_WIDTH+SENTINEL)*CELL_SIZE,
+		float32(MARGIN+INNER_HEIGHT)*CELL_SIZE,
 		2,
 		BORDER_COLOR,
 		true,
 	)
 
 	// Fixed minos
-	for y := 2; y < HEIGHT+3; y++ {
-		for x := 1; x < WIDTH+1; x++ {
+	for y := 0; y < MARGIN+INNER_HEIGHT; y++ {
+		for x := SENTINEL; x < INNER_WIDTH+SENTINEL; x++ {
 			c := g.Board[y][x]
 			if c != nil {
-				drawBlock(boardScreen, x, y, c, CELL_SIZE, MARGIN)
+				drawBlock(boardScreen, x, y, c, CELL_SIZE)
 			}
 		}
 	}
 
 	// Ghost mino
 	ghostMino := g.CurrentMino
-	for ; !isCollided(g.Board, ghostMino.MoveDown()); ghostMino = ghostMino.MoveDown() {
+	for ; !g.Board.isCollided(ghostMino.MoveDown()); ghostMino = ghostMino.MoveDown() {
 	}
 	for dy := range len(ghostMino.Shape) {
 		for dx := range len(ghostMino.Shape[dy]) {
 			if ghostMino.Shape[dy][dx] == 0 {
 				continue
 			}
-			drawBlock(boardScreen, ghostMino.X+dx, ghostMino.Y+dy, GHOST_COLOR, CELL_SIZE, MARGIN)
+			drawBlock(boardScreen, ghostMino.X+dx, ghostMino.Y+dy, GHOST_COLOR, CELL_SIZE)
 		}
 	}
 
@@ -286,7 +275,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			if g.CurrentMino.Shape[dy][dx] == 0 {
 				continue
 			}
-			drawBlock(boardScreen, g.CurrentMino.X+dx, g.CurrentMino.Y+dy, g.CurrentMino.Color, CELL_SIZE, MARGIN)
+			drawBlock(boardScreen, g.CurrentMino.X+dx, g.CurrentMino.Y+dy, g.CurrentMino.Color, CELL_SIZE)
 		}
 	}
 
@@ -304,13 +293,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 				if g.HoldingMino.Available {
 					c = g.HoldingMino.Mino.Color
 				}
-				drawBlock(holdingMinoScreen, dx+2, dy, c, CELL_SIZE, MARGIN)
+				drawBlock(holdingMinoScreen, dx+2, dy, c, CELL_SIZE)
 			}
 		}
 	}
 
 	// Next minos
-	nextMinosScreen := ebiten.NewImage(CELL_SIZE*6, CELL_SIZE*(HEIGHT+4))
+	nextMinosScreen := ebiten.NewImage(CELL_SIZE*6, CELL_SIZE*(OUTER_HEIGHT))
 	nextMinosScreen.Fill(BACKGROUND_COLOR)
 
 	for i, mino := range g.MinoBag.Sniff(6) {
@@ -319,7 +308,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 				if mino.Shape[dy][dx] == 0 {
 					continue
 				}
-				drawBlock(nextMinosScreen, dx, dy+i*3, mino.Color, CELL_SIZE, MARGIN)
+				drawBlock(nextMinosScreen, dx, dy+i*3, mino.Color, CELL_SIZE)
 			}
 		}
 	}

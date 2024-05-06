@@ -1,6 +1,8 @@
 package game
 
-import "image/color"
+import (
+	"image/color"
+)
 
 var (
 	Wall             = color.RGBA{108, 122, 137, 255}
@@ -9,11 +11,23 @@ var (
 	BORDER_COLOR     = color.RGBA{240, 240, 240, 255}
 )
 
-type Row = [WIDTH + 2]color.Color
-type Board [HEIGHT + 4]Row
+type Board [OUTER_HEIGHT][OUTER_WIDTH]color.Color
 
-func IsFilled(row Row) bool {
-	for _, cell := range row {
+func MakeBoard() Board {
+	board := Board{}
+	for y := range OUTER_HEIGHT - 1 {
+		board[y][0] = Wall
+		board[y][OUTER_WIDTH-1] = Wall
+	}
+	for x := range OUTER_WIDTH {
+		board[OUTER_HEIGHT-1][x] = Wall
+	}
+	return board
+}
+
+// Return true if the y-th row is filled
+func (b *Board) IsFilled(y int) bool {
+	for _, cell := range b[y] {
 		if cell == nil {
 			return false
 		}
@@ -21,6 +35,26 @@ func IsFilled(row Row) bool {
 	return true
 }
 
+// Return true if the mino is collided with the board
+func (b *Board) isCollided(mino Mino) bool {
+	for dy := range len(mino.Shape) {
+		for dx := range len(mino.Shape[dy]) {
+			if mino.Shape[dy][dx] == 0 {
+				continue
+			}
+			ny, nx := mino.Y+dy, mino.X+dx
+			if ny < 0 || ny >= OUTER_HEIGHT || nx < 0 || nx >= OUTER_WIDTH {
+				return true
+			}
+			if b[ny][nx] != nil || b[ny][nx] == Wall {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Write the color of mino to the board at each position
 func (b *Board) Fix(mino *Mino) {
 	for dy := range len(mino.Shape) {
 		for dx := range len(mino.Shape[dy]) {
@@ -32,28 +66,19 @@ func (b *Board) Fix(mino *Mino) {
 	}
 }
 
-func (b *Board) Init() {
-	for y := range HEIGHT + 4 {
-		b[y][0] = Wall
-		b[y][WIDTH+1] = Wall
-	}
-	for i := range WIDTH + 2 {
-		b[HEIGHT+3][i] = Wall
-	}
-}
-
+// Clear the filled lines and return the number of cleared lines
 func (b *Board) ClearLines() (clearedLines int) {
 	clearedLines = 0
-	for y := HEIGHT + 2; y > 0; y-- {
-		if IsFilled(b[y]) {
+	newBoard := MakeBoard()
+	for y := MARGIN + INNER_HEIGHT - SENTINEL; y >= 0; y-- {
+		if b.IsFilled(y) {
 			clearedLines++
-			for i := y; i > 2; i-- {
-				b[i] = b[i-1]
-			}
-			b[0] = Row{}
-			b[0][0] = Wall
-			b[0][WIDTH+1] = Wall
+			continue
 		}
+		newBoard[y+clearedLines] = b[y]
+	}
+	for y := range OUTER_HEIGHT {
+		b[y] = newBoard[y]
 	}
 	return
 }
