@@ -33,17 +33,22 @@ type Game struct {
 	MinoBag              MinoBag
 }
 
+func (g *Game) restart() {
+	g.HoldingMino = HoldingMino{Available: true}
+	g.Board = MakeBoard()
+	g.MinoBag = MinoBag{}
+	g.CurrentMino = g.MinoBag.Next()
+}
+
 func (g *Game) Update() error {
-
-	if g.CurrentMino.Name == "" {
-		g.CurrentMino = g.MinoBag.Next()
-		return nil
-	}
-
 	g.FrameCount++
 	g.CurrentMino.FrameCount++
 	g.CurrentMino.LockDown.UpdateTimer()
 	g.CurrentDroppingSpeed = g.NormalDroppingSpeed
+
+	if inpututil.KeyPressDuration(ebiten.KeyR) == 30 {
+		g.restart()
+	}
 
 	switch {
 
