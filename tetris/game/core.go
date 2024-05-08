@@ -50,19 +50,17 @@ func (g *Game) Update() error {
 		g.restart()
 	}
 
-	switch {
-
 	// Hold
-	case inpututil.IsKeyJustPressed(ebiten.KeyC) && g.HoldingMino.Available:
+	if inpututil.IsKeyJustPressed(ebiten.KeyC) && g.HoldingMino.Available {
 		if g.HoldingMino.Mino.Name == "" {
 			g.HoldingMino.Mino = g.MinoBag.Next()
 		}
 		g.CurrentMino.Y, g.CurrentMino.X = 0, 4
 		g.HoldingMino.Mino, g.CurrentMino = g.CurrentMino, g.HoldingMino.Mino
 		g.HoldingMino.Available = false
-
+	}
 	// Hard drop
-	case inpututil.IsKeyJustPressed(ebiten.KeySpace):
+	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		for nextMino := g.CurrentMino.MoveDown(); !g.Board.isCollided(nextMino); nextMino = nextMino.MoveDown() {
 			g.CurrentMino = nextMino
 		}
@@ -71,9 +69,10 @@ func (g *Game) Update() error {
 		g.Board.ClearLines()
 		g.CurrentMino = g.MinoBag.Next()
 		g.HoldingMino.Available = true
+	}
 
 	// Move Left
-	case inpututil.KeyPressDuration(ebiten.KeyLeft) > 9 && inpututil.KeyPressDuration(ebiten.KeyLeft)%2 == 0 || inpututil.IsKeyJustPressed(ebiten.KeyLeft):
+	if inpututil.KeyPressDuration(ebiten.KeyLeft) > 9 && inpututil.KeyPressDuration(ebiten.KeyLeft)%2 == 0 || inpututil.IsKeyJustPressed(ebiten.KeyLeft) {
 		nextMino := g.CurrentMino.MoveLeft()
 		if !g.Board.isCollided(nextMino) {
 			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
@@ -81,9 +80,10 @@ func (g *Game) Update() error {
 			nextMino.LockDown.UpdateCounter()
 			g.CurrentMino = nextMino
 		}
+	}
 
 	// Move Right
-	case inpututil.KeyPressDuration(ebiten.KeyRight) > 9 && inpututil.KeyPressDuration(ebiten.KeyRight)%2 == 0 || inpututil.IsKeyJustPressed(ebiten.KeyRight):
+	if inpututil.KeyPressDuration(ebiten.KeyRight) > 9 && inpututil.KeyPressDuration(ebiten.KeyRight)%2 == 0 || inpututil.IsKeyJustPressed(ebiten.KeyRight) {
 		nextMino := g.CurrentMino.MoveRight()
 		if !g.Board.isCollided(nextMino) {
 			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
@@ -91,9 +91,10 @@ func (g *Game) Update() error {
 			nextMino.LockDown.UpdateCounter()
 			g.CurrentMino = nextMino
 		}
+	}
 
 	// Rotate right
-	case inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) || inpututil.IsKeyJustPressed(ebiten.KeyX):
+	if inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) || inpututil.IsKeyJustPressed(ebiten.KeyX) {
 		for _, nextMino := range g.CurrentMino.RotateRightSRS() {
 			if !g.Board.isCollided(nextMino) {
 				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
@@ -103,9 +104,10 @@ func (g *Game) Update() error {
 				break
 			}
 		}
+	}
 
 	// Rotate left
-	case inpututil.IsKeyJustPressed(ebiten.KeyZ):
+	if inpututil.IsKeyJustPressed(ebiten.KeyZ) {
 		for _, nextMino := range g.CurrentMino.RotateLeftSSR() {
 			if !g.Board.isCollided(nextMino) {
 				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
@@ -115,9 +117,10 @@ func (g *Game) Update() error {
 				break
 			}
 		}
+	}
 
 	// Soft drop
-	case inpututil.KeyPressDuration(ebiten.KeyDown) > 0:
+	if inpututil.KeyPressDuration(ebiten.KeyDown) > 0 {
 		g.CurrentDroppingSpeed = g.NormalDroppingSpeed / 20
 	}
 
