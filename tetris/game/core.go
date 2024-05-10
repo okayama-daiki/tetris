@@ -1,9 +1,11 @@
 package game
 
 import (
+	"fmt"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
@@ -31,6 +33,7 @@ type Game struct {
 	CurrentMino          Mino
 	HoldingMino          HoldingMino
 	MinoBag              MinoBag
+	Fragments            [OUTER_HEIGHT][OUTER_WIDTH]Fragment
 }
 
 func (g *Game) restart() {
@@ -66,7 +69,13 @@ func (g *Game) Update() error {
 		}
 		g.CurrentMino.IsGrounded = true
 		g.Board.Fix(&g.CurrentMino)
-		g.Board.ClearLines()
+		clearedLines, clearedColors := g.Board.ClearLines()
+		for i, y := range clearedLines {
+			g.ClearedLines++
+			for x := range OUTER_WIDTH {
+				g.Fragments[y][x] = MakeFragment(clearedColors[i][x], x, y)
+			}
+		}
 		g.CurrentMino = g.MinoBag.Next()
 		g.HoldingMino.Available = true
 	}
@@ -131,7 +140,13 @@ func (g *Game) Update() error {
 			g.CurrentMino = nextMino
 		}
 		g.Board.Fix(&g.CurrentMino)
-		g.Board.ClearLines()
+		clearedLines, clearedColors := g.Board.ClearLines()
+		for i, y := range clearedLines {
+			g.ClearedLines++
+			for x := range OUTER_WIDTH {
+				g.Fragments[y][x] = MakeFragment(clearedColors[i][x], x, y)
+			}
+		}
 		g.CurrentMino = g.MinoBag.Next()
 		g.HoldingMino.Available = true
 
@@ -193,6 +208,17 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	boardScreen := ebiten.NewImage(boardWidth, boardHeight)
 	boardScreen.Fill(BACKGROUND_COLOR)
+
+	// Animation
+	for y := range OUTER_HEIGHT {
+		for x := range OUTER_WIDTH {
+			if g.Fragments[y][x].Frame > 0 {
+				g.Fragments[y][x].Frame--
+				posX, posY := g.Fragments[y][x].Position()
+				vector.DrawFilledRect(boardScreen, posX, posY, CELL_SIZE/2, CELL_SIZE/2, g.Fragments[y][x].Color(), true)
+			}
+		}
+	}
 
 	// Horizontal Lines
 	for y := MARGIN; y < OUTER_HEIGHT; y++ {
@@ -328,6 +354,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(boardScreen, op)
 	op.GeoM.Translate(float64(boardWidth), 2*CELL_SIZE)
 	screen.DrawImage(nextMinosScreen, op)
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("fps: %f\ntps: %f", ebiten.ActualFPS(), ebiten.ActualTPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

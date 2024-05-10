@@ -67,15 +67,19 @@ func (b *Board) Fix(mino *Mino) {
 }
 
 // Clear the filled lines and return the number of cleared lines
-func (b *Board) ClearLines() (clearedLines int) {
-	clearedLines = 0
+func (b *Board) ClearLines() (clearedLines []int, clearedColors [][12]color.Color) {
+	clearedLines = []int{}
+	clearedColors = [][12]color.Color{}
+
 	newBoard := MakeBoard()
+
 	for y := MARGIN + INNER_HEIGHT - SENTINEL; y >= 0; y-- {
 		if b.IsFilled(y) {
-			clearedLines++
+			clearedLines = append(clearedLines, y)
+			clearedColors = append(clearedColors, b[y])
 			continue
 		}
-		newBoard[y+clearedLines] = b[y]
+		newBoard[y+len(clearedLines)] = b[y]
 	}
 	for y := range OUTER_HEIGHT {
 		b[y] = newBoard[y]

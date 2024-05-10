@@ -435,3 +435,48 @@ func (l *LockDown) Reset() {
 	l.timer = 0
 	l.counter = 0
 }
+
+// A fragment is a small piece of a mino that is animated when it is cleared
+type Fragment struct {
+	Frame            int
+	_Color           color.Color
+	InitialX         int
+	InitialY         int
+	AccelerationX    float32
+	AccelerationY    float32 // Gravity
+	InitialVelocityX float32
+	InitialVelocityY float32
+}
+
+func MakeFragment(color color.Color, x, y int) Fragment {
+	return Fragment{
+		Frame:            30,
+		_Color:           color,
+		InitialX:         x,
+		InitialY:         y,
+		AccelerationX:    0,
+		AccelerationY:    1,
+		InitialVelocityX: rand.Float32()*6 - 3,
+		InitialVelocityY: -3,
+	}
+}
+
+func (f *Fragment) Position() (x, y float32) {
+	x = calc(f.InitialVelocityX, f.AccelerationX, float32(30-f.Frame)) + float32(f.InitialX*CELL_SIZE+CELL_SIZE/2)
+	y = calc(f.InitialVelocityY, f.AccelerationY, float32(30-f.Frame)) + float32(f.InitialY*CELL_SIZE+CELL_SIZE/2)
+	return
+}
+
+func (f *Fragment) Color() color.Color {
+	r, g, b, _ := f._Color.RGBA()
+	return color.RGBA{
+		uint8(r / 256),
+		uint8(g / 256),
+		uint8(b / 256),
+		uint8(f.Frame / 30 * 255),
+	}
+}
+
+func calc(v, a, t float32) float32 {
+	return v*t + 0.5*a*t*t
+}
