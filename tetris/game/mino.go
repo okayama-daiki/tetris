@@ -16,19 +16,9 @@ const (
 
 type Shape [][]int
 
-func (s Shape) deepCopy() Shape {
-	shape := make(Shape, len(s))
-	for i := range s {
-		shape[i] = make([]int, len(s[i]))
-		copy(shape[i], s[i])
-	}
-	return shape
-}
-
 // Note: the Mino is fully fixed if IsGrounded is true and BacklashFrame is 0 or ExtendedPlacementCounter is 0
 type Mino struct {
 	Name          string
-	Shape         Shape
 	Color         color.Color
 	Y             int
 	X             int
@@ -44,34 +34,35 @@ type HoldingMino struct {
 	Available bool
 }
 
+func (m *Mino) Shape() Shape {
+	switch m.Name {
+	case "T":
+		return Ts[m.Angle]
+	case "O":
+		return Os[m.Angle]
+	case "L":
+		return Ls[m.Angle]
+	case "J":
+		return Js[m.Angle]
+	case "S":
+		return Ss[m.Angle]
+	case "Z":
+		return Zs[m.Angle]
+	case "I":
+		return Is[m.Angle]
+	default:
+		panic("Invalid mino name")
+	}
+}
+
 // Rotate the mino 90 degrees clockwise
 func (m Mino) rotateRight() Mino {
-	shape := make(Shape, len(m.Shape))
-	for i := range m.Shape {
-		shape[i] = make([]int, len(m.Shape[i]))
-	}
-	for y := range len(m.Shape) {
-		for x := range len(m.Shape[y]) {
-			shape[x][len(m.Shape)-1-y] = m.Shape[y][x]
-		}
-	}
-	m.Shape = shape
 	m.Angle = (m.Angle + 1) % 4
 	return m
 }
 
 // Rotate the mino 90 degrees counterclockwise
 func (m Mino) rotateLeft() Mino {
-	shape := make(Shape, len(m.Shape))
-	for i := range m.Shape {
-		shape[i] = make([]int, len(m.Shape[i]))
-	}
-	for y := range len(m.Shape) {
-		for x := range len(m.Shape[y]) {
-			shape[len(m.Shape)-1-x][y] = m.Shape[y][x]
-		}
-	}
-	m.Shape = shape
 	m.Angle = (m.Angle + 3) % 4
 	return m
 }
@@ -250,35 +241,183 @@ func (m Mino) RotateLeftSSR() []Mino {
 
 func (m Mino) MoveRight() Mino {
 	m.X++
-	m.Shape = m.Shape.deepCopy()
 	return m
 }
 
 func (m Mino) MoveLeft() Mino {
 	m.X--
-	m.Shape = m.Shape.deepCopy()
 	return m
 }
 
 func (m Mino) MoveDown() Mino {
 	m.Y++
-	m.Shape = m.Shape.deepCopy()
 	return m
 }
 
 func (m Mino) MoveUp() Mino {
 	m.Y--
-	m.Shape = m.Shape.deepCopy()
 	return m
 }
 
 var (
-	T = Mino{
-		Shape: [][]int{
+	Ts = [4]Shape{
+		[][]int{
 			{0, 1, 0},
 			{1, 1, 1},
 			{0, 0, 0},
 		},
+		[][]int{
+			{0, 1, 0},
+			{0, 1, 1},
+			{0, 1, 0},
+		},
+		[][]int{
+			{0, 0, 0},
+			{1, 1, 1},
+			{0, 1, 0},
+		},
+		[][]int{
+			{0, 1, 0},
+			{1, 1, 0},
+			{0, 1, 0},
+		},
+	}
+	Os = [4]Shape{
+		[][]int{
+			{1, 1},
+			{1, 1},
+		},
+		[][]int{
+			{1, 1},
+			{1, 1},
+		},
+		[][]int{
+			{1, 1},
+			{1, 1},
+		},
+		[][]int{
+			{1, 1},
+			{1, 1},
+		},
+	}
+	Ls = [4]Shape{
+		[][]int{
+			{0, 0, 1},
+			{1, 1, 1},
+			{0, 0, 0},
+		},
+		[][]int{
+			{0, 1, 0},
+			{0, 1, 0},
+			{0, 1, 1},
+		},
+		[][]int{
+			{0, 0, 0},
+			{1, 1, 1},
+			{1, 0, 0},
+		},
+		[][]int{
+			{1, 1, 0},
+			{0, 1, 0},
+			{0, 1, 0},
+		},
+	}
+	Js = [4]Shape{
+		[][]int{
+			{1, 0, 0},
+			{1, 1, 1},
+			{0, 0, 0},
+		},
+		[][]int{
+			{0, 1, 1},
+			{0, 1, 0},
+			{0, 1, 0},
+		},
+		[][]int{
+			{0, 0, 0},
+			{1, 1, 1},
+			{0, 0, 1},
+		},
+		[][]int{
+			{0, 1, 0},
+			{0, 1, 0},
+			{1, 1, 0},
+		},
+	}
+	Ss = [4]Shape{
+		[][]int{
+			{0, 1, 1},
+			{1, 1, 0},
+			{0, 0, 0},
+		},
+		[][]int{
+			{0, 1, 0},
+			{0, 1, 1},
+			{0, 0, 1},
+		},
+		[][]int{
+			{0, 0, 0},
+			{0, 1, 1},
+			{1, 1, 0},
+		},
+		[][]int{
+			{1, 0, 0},
+			{1, 1, 0},
+			{0, 1, 0},
+		},
+	}
+	Zs = [4]Shape{
+		[][]int{
+			{1, 1, 0},
+			{0, 1, 1},
+			{0, 0, 0},
+		},
+		[][]int{
+			{0, 1, 0},
+			{1, 1, 0},
+			{1, 0, 0},
+		},
+		[][]int{
+			{0, 0, 0},
+			{1, 1, 0},
+			{0, 1, 1},
+		},
+		[][]int{
+			{0, 1, 0},
+			{1, 1, 0},
+			{1, 0, 0},
+		},
+	}
+	Is = [4]Shape{
+		[][]int{
+			{0, 0, 0, 0},
+			{1, 1, 1, 1},
+			{0, 0, 0, 0},
+			{0, 0, 0, 0},
+		},
+		[][]int{
+			{0, 0, 1, 0},
+			{0, 0, 1, 0},
+			{0, 0, 1, 0},
+			{0, 0, 1, 0},
+		},
+		[][]int{
+			{0, 0, 0, 0},
+			{0, 0, 0, 0},
+			{1, 1, 1, 1},
+			{0, 0, 0, 0},
+		},
+		[][]int{
+			{0, 1, 0, 0},
+			{0, 1, 0, 0},
+			{0, 1, 0, 0},
+			{0, 1, 0, 0},
+		},
+	}
+)
+
+var (
+	T = Mino{
 		Name:          "T",
 		Color:         color.RGBA{106, 50, 165, 255}, // Purple
 		Angle:         0,
@@ -286,10 +425,6 @@ var (
 	}
 
 	O = Mino{
-		Shape: [][]int{
-			{1, 1},
-			{1, 1},
-		},
 		Name:          "O",
 		Color:         color.RGBA{255, 213, 0, 255}, // Yellow
 		Angle:         0,
@@ -297,11 +432,6 @@ var (
 	}
 
 	L = Mino{
-		Shape: [][]int{
-			{0, 0, 1},
-			{1, 1, 1},
-			{0, 0, 0},
-		},
 		Name:          "L",
 		Color:         color.RGBA{255, 121, 28, 255}, // Orange
 		Angle:         0,
@@ -309,11 +439,6 @@ var (
 	}
 
 	J = Mino{
-		Shape: [][]int{
-			{1, 0, 0},
-			{1, 1, 1},
-			{0, 0, 0},
-		},
 		Name:          "J",
 		Color:         color.RGBA{6, 119, 186, 255}, // Blue
 		Angle:         0,
@@ -321,11 +446,6 @@ var (
 	}
 
 	S = Mino{
-		Shape: [][]int{
-			{0, 1, 1},
-			{1, 1, 0},
-			{0, 0, 0},
-		},
 		Name:          "S",
 		Color:         color.RGBA{114, 203, 59, 255}, // Green
 		Angle:         0,
@@ -333,11 +453,6 @@ var (
 	}
 
 	Z = Mino{
-		Shape: [][]int{
-			{1, 1, 0},
-			{0, 1, 1},
-			{0, 0, 0},
-		},
 		Name:          "Z",
 		Color:         color.RGBA{212, 42, 52, 255}, // Red
 		Angle:         0,
@@ -345,12 +460,6 @@ var (
 	}
 
 	I = Mino{
-		Shape: [][]int{
-			{0, 0, 0, 0},
-			{1, 1, 1, 1},
-			{0, 0, 0, 0},
-			{0, 0, 0, 0},
-		},
 		Name:          "I",
 		Color:         color.RGBA{31, 195, 205, 255}, // Cyan
 		Angle:         0,

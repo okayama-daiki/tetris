@@ -294,9 +294,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	ghostMino := g.CurrentMino
 	for ; !g.Board.isCollided(ghostMino.MoveDown()); ghostMino = ghostMino.MoveDown() {
 	}
-	for dy := range len(ghostMino.Shape) {
-		for dx := range len(ghostMino.Shape[dy]) {
-			if ghostMino.Shape[dy][dx] == 0 {
+	for dy := range len(ghostMino.Shape()) {
+		for dx := range len(ghostMino.Shape()[dy]) {
+			if ghostMino.Shape()[dy][dx] == 0 {
 				continue
 			}
 			drawBlock(boardScreen, ghostMino.X+dx, ghostMino.Y+dy, GHOST_COLOR, CELL_SIZE)
@@ -304,9 +304,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Dropping mino
-	for dy := range len(g.CurrentMino.Shape) {
-		for dx := range len(g.CurrentMino.Shape[dy]) {
-			if g.CurrentMino.Shape[dy][dx] == 0 {
+	for dy := range len(g.CurrentMino.Shape()) {
+		for dx := range len(g.CurrentMino.Shape()[dy]) {
+			if g.CurrentMino.Shape()[dy][dx] == 0 {
 				continue
 			}
 			drawBlock(boardScreen, g.CurrentMino.X+dx, g.CurrentMino.Y+dy, g.CurrentMino.Color, CELL_SIZE)
@@ -318,9 +318,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	holdingMinoScreen.Fill(BACKGROUND_COLOR)
 
 	if g.HoldingMino.Mino.Name != "" {
-		for dy := range len(g.HoldingMino.Mino.Shape) {
-			for dx := range len(g.HoldingMino.Mino.Shape[dy]) {
-				if g.HoldingMino.Mino.Shape[dy][dx] == 0 {
+		for dy := range len(g.HoldingMino.Mino.Shape()) {
+			for dx := range len(g.HoldingMino.Mino.Shape()[dy]) {
+				if g.HoldingMino.Mino.Shape()[dy][dx] == 0 {
 					continue
 				}
 				var c color.Color = GHOST_COLOR
@@ -337,9 +337,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	nextMinosScreen.Fill(BACKGROUND_COLOR)
 
 	for i, mino := range g.MinoBag.Sniff(6) {
-		for dy := range len(mino.Shape) {
-			for dx := range len(mino.Shape[dy]) {
-				if mino.Shape[dy][dx] == 0 {
+		for dy := range len(mino.Shape()) {
+			for dx := range len(mino.Shape()[dy]) {
+				if mino.Shape()[dy][dx] == 0 {
 					continue
 				}
 				drawBlock(nextMinosScreen, dx, dy+i*3, mino.Color, CELL_SIZE)

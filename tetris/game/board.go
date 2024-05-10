@@ -37,9 +37,9 @@ func (b *Board) IsFilled(y int) bool {
 
 // Return true if the mino is collided with the board
 func (b *Board) isCollided(mino Mino) bool {
-	for dy := range len(mino.Shape) {
-		for dx := range len(mino.Shape[dy]) {
-			if mino.Shape[dy][dx] == 0 {
+	for dy := range len(mino.Shape()) {
+		for dx := range len(mino.Shape()[dy]) {
+			if mino.Shape()[dy][dx] == 0 {
 				continue
 			}
 			ny, nx := mino.Y+dy, mino.X+dx
@@ -56,9 +56,9 @@ func (b *Board) isCollided(mino Mino) bool {
 
 // Write the color of mino to the board at each position
 func (b *Board) Fix(mino *Mino) {
-	for dy := range len(mino.Shape) {
-		for dx := range len(mino.Shape[dy]) {
-			if mino.Shape[dy][dx] == 0 {
+	for dy := range len(mino.Shape()) {
+		for dx := range len(mino.Shape()[dy]) {
+			if mino.Shape()[dy][dx] == 0 {
 				continue
 			}
 			b[mino.Y+dy][mino.X+dx] = mino.Color
