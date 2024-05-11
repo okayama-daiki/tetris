@@ -38,7 +38,7 @@ type Game struct {
 
 func (g *Game) restart() {
 	g.HoldingMino = HoldingMino{Available: true}
-	g.Board = MakeBoard()
+	g.Board = NewBoard()
 	g.MinoBag = MinoBag{}
 	g.CurrentMino = g.MinoBag.Next()
 }
@@ -73,7 +73,7 @@ func (g *Game) Update() error {
 		for i, y := range clearedLines {
 			g.ClearedLines++
 			for x := range OUTER_WIDTH {
-				g.Fragments[y][x] = MakeFragment(clearedColors[i][x], x, y)
+				g.Fragments[y][x] = NewFragment(clearedColors[i][x], x, y)
 			}
 		}
 		g.CurrentMino = g.MinoBag.Next()
@@ -144,7 +144,7 @@ func (g *Game) Update() error {
 		for i, y := range clearedLines {
 			g.ClearedLines++
 			for x := range OUTER_WIDTH {
-				g.Fragments[y][x] = MakeFragment(clearedColors[i][x], x, y)
+				g.Fragments[y][x] = NewFragment(clearedColors[i][x], x, y)
 			}
 		}
 		g.CurrentMino = g.MinoBag.Next()

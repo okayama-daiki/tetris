@@ -13,7 +13,7 @@ var (
 
 type Board [OUTER_HEIGHT][OUTER_WIDTH]color.Color
 
-func MakeBoard() Board {
+func NewBoard() Board {
 	board := Board{}
 	for y := range OUTER_HEIGHT - 1 {
 		board[y][0] = Wall
@@ -71,7 +71,7 @@ func (b *Board) ClearLines() (clearedLines []int, clearedColors [][12]color.Colo
 	clearedLines = []int{}
 	clearedColors = [][12]color.Color{}
 
-	newBoard := MakeBoard()
+	newBoard := NewBoard()
 
 	for y := MARGIN + INNER_HEIGHT - SENTINEL; y >= 0; y-- {
 		if b.IsFilled(y) {

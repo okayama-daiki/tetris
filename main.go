@@ -34,7 +34,7 @@ func main() {
 	minoBag := game.MinoBag{}
 	currentMino := minoBag.Next()
 	holdingMino := game.HoldingMino{Available: true}
-	board := game.MakeBoard()
+	board := game.NewBoard()
 
 	var game = game.Game{
 		MinoBag:              minoBag,

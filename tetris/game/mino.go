@@ -557,7 +557,7 @@ type Fragment struct {
 	InitialVelocityY float32
 }
 
-func MakeFragment(color color.Color, x, y int) Fragment {
+func NewFragment(color color.Color, x, y int) Fragment {
 	return Fragment{
 		Frame:            30,
 		_Color:           color,
