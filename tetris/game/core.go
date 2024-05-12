@@ -165,49 +165,57 @@ func (g *Game) Update() error {
 	return nil
 }
 
-func drawBlock(screen *ebiten.Image, x, y int, c color.Color, size float32) {
-	var margin float32 = 0.5
-	r, g, b, _ := c.RGBA()
-
-	vector.DrawFilledRect(
-		screen,
-		float32(x)*size+margin,
-		float32(y)*size+margin,
-		size-2*margin,
-		size-2*margin,
-		color.RGBA{uint8(r / 256), uint8(g / 256), uint8(b / 256), 255},
-		true,
-	)
-	vector.DrawFilledRect(
-		screen,
-		float32(x)*size+10*margin,
-		float32(y)*size+10*margin,
-		size-20*margin,
-		size-20*margin,
-		color.RGBA{uint8(r / 256), uint8(g / 256), uint8(b / 256), 230},
-		true,
-	)
-	vector.DrawFilledRect(
-		screen,
-		float32(x)*size+13*margin,
-		float32(y)*size+13*margin,
-		size-26*margin,
-		size-26*margin,
-		color.RGBA{uint8(r / 256), uint8(g / 256), uint8(b / 256), 255},
-		true,
-	)
+func MakeDrawFilledRect(offsetX, offsetY float32) func(screen *ebiten.Image, x, y, width, height float32, clr color.Color, antialias bool) {
+	return func(screen *ebiten.Image, x, y, width, height float32, clr color.Color, antialias bool) {
+		vector.DrawFilledRect(screen, x+offsetX, y+offsetY, width, height, clr, antialias)
+	}
 }
 
-func (g *Game) Draw(screen *ebiten.Image) {
-	screen.Fill(BACKGROUND_COLOR)
+func MakeStrokeLine(offsetX, offsetY float32) func(dst *ebiten.Image, x0, y0, x1, y1, strokeWidth float32, clr color.Color, antialias bool) {
+	return func(dst *ebiten.Image, x0, y0, x1, y1, strokeWidth float32, clr color.Color, antialias bool) {
+		vector.StrokeLine(dst, x0+offsetX, y0+offsetY, x1+offsetX, y1+offsetY, strokeWidth, clr, antialias)
+	}
+}
 
-	var (
-		boardWidth  = CELL_SIZE * OUTER_WIDTH
-		boardHeight = CELL_SIZE * OUTER_HEIGHT
-	)
+func MakeDrawBlock(offsetX, offsetY float32) func(screen *ebiten.Image, x, y int, c color.Color, size float32) {
+	return func(screen *ebiten.Image, x, y int, c color.Color, size float32) {
+		var padding float32 = 0.5
+		r, g, b, _ := c.RGBA()
 
-	boardScreen := ebiten.NewImage(boardWidth, boardHeight)
-	boardScreen.Fill(BACKGROUND_COLOR)
+		vector.DrawFilledRect(
+			screen,
+			float32(x)*size+padding+offsetX,
+			float32(y)*size+padding+offsetY,
+			size-2*padding,
+			size-2*padding,
+			color.RGBA{uint8(r / 256), uint8(g / 256), uint8(b / 256), 255},
+			true,
+		)
+		vector.DrawFilledRect(
+			screen,
+			float32(x)*size+10*padding+offsetX,
+			float32(y)*size+10*padding+offsetY,
+			size-20*padding,
+			size-20*padding,
+			color.RGBA{uint8(r / 256), uint8(g / 256), uint8(b / 256), 230},
+			true,
+		)
+		vector.DrawFilledRect(
+			screen,
+			float32(x)*size+13*padding+offsetX,
+			float32(y)*size+13*padding+offsetY,
+			size-26*padding,
+			size-26*padding,
+			color.RGBA{uint8(r / 256), uint8(g / 256), uint8(b / 256), 255},
+			true,
+		)
+	}
+}
+
+func (g *Game) drawGameBoard(screen *ebiten.Image, offsetX, offsetY float32) {
+	drawFilledRect := MakeDrawFilledRect(offsetX, offsetY)
+	strokeLine := MakeStrokeLine(offsetX, offsetY)
+	drawBlock := MakeDrawBlock(offsetX, offsetY)
 
 	// Animation
 	for y := range OUTER_HEIGHT {
@@ -215,15 +223,23 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			if g.Fragments[y][x].Frame > 0 {
 				g.Fragments[y][x].Frame--
 				posX, posY := g.Fragments[y][x].Position()
-				vector.DrawFilledRect(boardScreen, posX, posY, CELL_SIZE/2, CELL_SIZE/2, g.Fragments[y][x].Color(), true)
+				drawFilledRect(
+					screen,
+					posX,
+					posY,
+					CELL_SIZE/2,
+					CELL_SIZE/2,
+					g.Fragments[y][x].Color(),
+					true,
+				)
 			}
 		}
 	}
 
 	// Horizontal Lines
 	for y := MARGIN; y < OUTER_HEIGHT; y++ {
-		vector.StrokeLine(
-			boardScreen,
+		strokeLine(
+			screen,
 			CELL_SIZE,
 			float32(y*CELL_SIZE)+2,
 			float32(INNER_WIDTH+SENTINEL)*CELL_SIZE,
@@ -235,9 +251,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Vertical Lines
-	for x := range OUTER_WIDTH {
-		vector.StrokeLine(
-			boardScreen,
+	for x := SENTINEL; x < OUTER_WIDTH; x++ {
+		strokeLine(
+			screen,
 			float32(x*CELL_SIZE),
 			MARGIN*CELL_SIZE,
 			float32(x*CELL_SIZE),
@@ -249,8 +265,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Border
-	vector.StrokeLine(
-		boardScreen,
+	strokeLine(
+		screen,
 		CELL_SIZE,
 		MARGIN*CELL_SIZE,
 		CELL_SIZE,
@@ -259,8 +275,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		BORDER_COLOR,
 		true,
 	)
-	vector.StrokeLine(
-		boardScreen,
+	strokeLine(
+		screen,
 		float32(SENTINEL+INNER_WIDTH)*CELL_SIZE,
 		MARGIN*CELL_SIZE,
 		float32(SENTINEL+INNER_WIDTH)*CELL_SIZE,
@@ -269,8 +285,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		BORDER_COLOR,
 		true,
 	)
-	vector.StrokeLine(
-		boardScreen,
+	strokeLine(
+		screen,
 		CELL_SIZE,
 		float32(MARGIN+INNER_HEIGHT)*CELL_SIZE,
 		float32(INNER_WIDTH+SENTINEL)*CELL_SIZE,
@@ -285,7 +301,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		for x := SENTINEL; x < INNER_WIDTH+SENTINEL; x++ {
 			c := g.Board[y][x]
 			if c != nil {
-				drawBlock(boardScreen, x, y, c, CELL_SIZE)
+				drawBlock(screen, x, y, c, CELL_SIZE)
 			}
 		}
 	}
@@ -299,7 +315,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			if ghostMino.Shape()[dy][dx] == 0 {
 				continue
 			}
-			drawBlock(boardScreen, ghostMino.X+dx, ghostMino.Y+dy, GHOST_COLOR, CELL_SIZE)
+			drawBlock(screen, ghostMino.X+dx, ghostMino.Y+dy, GHOST_COLOR, CELL_SIZE)
 		}
 	}
 
@@ -309,13 +325,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			if g.CurrentMino.Shape()[dy][dx] == 0 {
 				continue
 			}
-			drawBlock(boardScreen, g.CurrentMino.X+dx, g.CurrentMino.Y+dy, g.CurrentMino.Color, CELL_SIZE)
+			drawBlock(screen, g.CurrentMino.X+dx, g.CurrentMino.Y+dy, g.CurrentMino.Color, CELL_SIZE)
 		}
 	}
+}
 
-	// Holding mino
-	holdingMinoScreen := ebiten.NewImage(CELL_SIZE*6, CELL_SIZE*6)
-	holdingMinoScreen.Fill(BACKGROUND_COLOR)
+func (g *Game) drawHold(screen *ebiten.Image, offsetX, offsetY float32) {
+	drawBlock := MakeDrawBlock(offsetX, offsetY)
 
 	if g.HoldingMino.Mino.Name != "" {
 		for dy := range len(g.HoldingMino.Mino.Shape()) {
@@ -327,14 +343,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 				if g.HoldingMino.Available {
 					c = g.HoldingMino.Mino.Color
 				}
-				drawBlock(holdingMinoScreen, dx+2, dy, c, CELL_SIZE)
+				drawBlock(screen, dx+2, dy, c, CELL_SIZE)
 			}
 		}
 	}
+}
 
-	// Next minos
-	nextMinosScreen := ebiten.NewImage(CELL_SIZE*6, CELL_SIZE*(OUTER_HEIGHT))
-	nextMinosScreen.Fill(BACKGROUND_COLOR)
+func (g *Game) drawNext(screen *ebiten.Image, offsetX, offsetY float32) {
+	drawBlock := MakeDrawBlock(offsetX, offsetY)
 
 	for i, mino := range g.MinoBag.Sniff(6) {
 		for dy := range len(mino.Shape()) {
@@ -342,18 +358,19 @@ func (g *Game) Draw(screen *ebiten.Image) {
 				if mino.Shape()[dy][dx] == 0 {
 					continue
 				}
-				drawBlock(nextMinosScreen, dx, dy+i*3, mino.Color, CELL_SIZE)
+				drawBlock(screen, dx, dy+i*3, mino.Color, CELL_SIZE)
 			}
 		}
 	}
+}
 
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(0, 2*CELL_SIZE)
-	screen.DrawImage(holdingMinoScreen, op)
-	op.GeoM.Translate(6*CELL_SIZE, -2*CELL_SIZE)
-	screen.DrawImage(boardScreen, op)
-	op.GeoM.Translate(float64(boardWidth), 2*CELL_SIZE)
-	screen.DrawImage(nextMinosScreen, op)
+func (g *Game) Draw(screen *ebiten.Image) {
+	screen.Fill(BACKGROUND_COLOR)
+
+	g.drawHold(screen, 0, 2*CELL_SIZE)
+	g.drawGameBoard(screen, 6*CELL_SIZE, 0)
+	g.drawNext(screen, (6+OUTER_WIDTH)*CELL_SIZE, 2*CELL_SIZE)
+
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("fps: %f\ntps: %f", ebiten.ActualFPS(), ebiten.ActualTPS()))
 }
 
