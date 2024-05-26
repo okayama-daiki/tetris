@@ -37,6 +37,14 @@ type Game struct {
 }
 
 func (g *Game) restart() {
+	g.Fragments = [OUTER_HEIGHT][OUTER_WIDTH]Fragment{}
+	for y := range OUTER_HEIGHT {
+		for x := range OUTER_WIDTH {
+			if g.Board[y][x] != nil {
+				g.Fragments[y][x] = NewFragment(g.Board[y][x], x, y)
+			}
+		}
+	}
 	g.HoldingMino = HoldingMino{Available: true}
 	g.Board = NewBoard()
 	g.MinoBag = MinoBag{}
@@ -62,6 +70,7 @@ func (g *Game) Update() error {
 		g.HoldingMino.Mino, g.CurrentMino = g.CurrentMino, g.HoldingMino.Mino
 		g.HoldingMino.Available = false
 	}
+
 	// Hard drop
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		for nextMino := g.CurrentMino.MoveDown(); !g.Board.isCollided(nextMino); nextMino = nextMino.MoveDown() {
@@ -77,6 +86,9 @@ func (g *Game) Update() error {
 			}
 		}
 		g.CurrentMino = g.MinoBag.Next()
+		if g.IsGameOver() {
+			g.restart()
+		}
 		g.HoldingMino.Available = true
 	}
 
@@ -148,6 +160,9 @@ func (g *Game) Update() error {
 			}
 		}
 		g.CurrentMino = g.MinoBag.Next()
+		if g.IsGameOver() {
+			g.restart()
+		}
 		g.HoldingMino.Available = true
 
 	case g.CurrentMino.FrameCount%g.CurrentDroppingSpeed == 0:
@@ -163,6 +178,10 @@ func (g *Game) Update() error {
 	}
 
 	return nil
+}
+
+func (g *Game) IsGameOver() bool {
+	return g.CurrentMino.Y == 0 && g.Board.isCollided(g.CurrentMino)
 }
 
 func MakeDrawFilledRect(offsetX, offsetY float32) func(screen *ebiten.Image, x, y, width, height float32, clr color.Color, antialias bool) {
