@@ -67,6 +67,7 @@ func (g *Game) Update() error {
 			g.HoldingMino.Mino = g.MinoBag.Next()
 		}
 		g.CurrentMino.Y, g.CurrentMino.X = 0, 4
+		g.CurrentMino.Angle = 0
 		g.HoldingMino.Mino, g.CurrentMino = g.CurrentMino, g.HoldingMino.Mino
 		g.HoldingMino.Available = false
 	}
