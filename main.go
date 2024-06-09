@@ -8,6 +8,8 @@ import (
 	"runtime/pprof"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	ebitenAudio "github.com/hajimehoshi/ebiten/v2/audio"
+	"github.com/okayama-daiki/tetris/tetris/audio"
 	"github.com/okayama-daiki/tetris/tetris/game"
 )
 
@@ -36,6 +38,11 @@ func main() {
 	holdingMino := game.HoldingMino{Available: true}
 	board := game.NewBoard()
 
+	audioPlayer, err := audio.NewPlayer(ebitenAudio.NewContext(44100))
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	var game = game.Game{
 		MinoBag:              minoBag,
 		CurrentMino:          currentMino,
@@ -43,6 +50,7 @@ func main() {
 		Board:                board,
 		NormalDroppingSpeed:  60,
 		CurrentDroppingSpeed: 60,
+		AudioPlayer:          audioPlayer,
 	}
 
 	if err := ebiten.RunGame(&game); err != nil {

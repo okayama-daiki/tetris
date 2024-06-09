@@ -8,6 +8,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+	"github.com/okayama-daiki/tetris/tetris/audio"
 )
 
 const (
@@ -34,9 +35,13 @@ type Game struct {
 	HoldingMino          HoldingMino
 	MinoBag              MinoBag
 	Fragments            [OUTER_HEIGHT][OUTER_WIDTH]Fragment
+	AudioPlayer          *audio.Player
 }
 
 func (g *Game) restart() {
+	g.AudioPlayer.PlayClear()
+	g.ClearedLines = 0
+	g.FrameCount = 0
 	g.Fragments = [OUTER_HEIGHT][OUTER_WIDTH]Fragment{}
 	for y := range OUTER_HEIGHT {
 		for x := range OUTER_WIDTH {
@@ -52,6 +57,7 @@ func (g *Game) restart() {
 }
 
 func (g *Game) Update() error {
+	g.AudioPlayer.Update()
 	g.FrameCount++
 	g.CurrentMino.FrameCount++
 	g.CurrentMino.LockDown.UpdateTimer()
@@ -66,6 +72,7 @@ func (g *Game) Update() error {
 		if g.HoldingMino.Mino.Name == "" {
 			g.HoldingMino.Mino = g.MinoBag.Next()
 		}
+		g.AudioPlayer.PlayHold()
 		g.CurrentMino.Y, g.CurrentMino.X = 0, 4
 		g.CurrentMino.Angle = 0
 		g.HoldingMino.Mino, g.CurrentMino = g.CurrentMino, g.HoldingMino.Mino
@@ -74,12 +81,16 @@ func (g *Game) Update() error {
 
 	// Hard drop
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+		g.AudioPlayer.PlayHardDrop()
 		for nextMino := g.CurrentMino.MoveDown(); !g.Board.isCollided(nextMino); nextMino = nextMino.MoveDown() {
 			g.CurrentMino = nextMino
 		}
 		g.CurrentMino.IsGrounded = true
 		g.Board.Fix(&g.CurrentMino)
 		clearedLines, clearedColors := g.Board.ClearLines()
+		if len(clearedLines) > 0 {
+			g.AudioPlayer.PlayClear()
+		}
 		for i, y := range clearedLines {
 			g.ClearedLines++
 			for x := range OUTER_WIDTH {
@@ -91,12 +102,14 @@ func (g *Game) Update() error {
 			g.restart()
 		}
 		g.HoldingMino.Available = true
+
 	}
 
 	// Move Left
 	if inpututil.KeyPressDuration(ebiten.KeyLeft) > 9 && inpututil.KeyPressDuration(ebiten.KeyLeft)%2 == 0 || inpututil.IsKeyJustPressed(ebiten.KeyLeft) {
 		nextMino := g.CurrentMino.MoveLeft()
 		if !g.Board.isCollided(nextMino) {
+			g.AudioPlayer.PlayMove()
 			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
 			nextMino.IsGrounded = false
 			nextMino.LockDown.UpdateCounter()
@@ -108,6 +121,7 @@ func (g *Game) Update() error {
 	if inpututil.KeyPressDuration(ebiten.KeyRight) > 9 && inpututil.KeyPressDuration(ebiten.KeyRight)%2 == 0 || inpututil.IsKeyJustPressed(ebiten.KeyRight) {
 		nextMino := g.CurrentMino.MoveRight()
 		if !g.Board.isCollided(nextMino) {
+			g.AudioPlayer.PlayMove()
 			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
 			nextMino.IsGrounded = false
 			nextMino.LockDown.UpdateCounter()
@@ -119,6 +133,7 @@ func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) || inpututil.IsKeyJustPressed(ebiten.KeyX) {
 		for _, nextMino := range g.CurrentMino.RotateRightSRS() {
 			if !g.Board.isCollided(nextMino) {
+				g.AudioPlayer.PlayRotate()
 				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
 				nextMino.IsGrounded = false
 				nextMino.LockDown.UpdateCounter()
@@ -132,6 +147,7 @@ func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyZ) {
 		for _, nextMino := range g.CurrentMino.RotateLeftSSR() {
 			if !g.Board.isCollided(nextMino) {
+				g.AudioPlayer.PlayRotate()
 				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
 				nextMino.IsGrounded = false
 				nextMino.LockDown.UpdateCounter()
@@ -154,6 +170,9 @@ func (g *Game) Update() error {
 		}
 		g.Board.Fix(&g.CurrentMino)
 		clearedLines, clearedColors := g.Board.ClearLines()
+		if len(clearedLines) > 0 {
+			g.AudioPlayer.PlayClear()
+		}
 		for i, y := range clearedLines {
 			g.ClearedLines++
 			for x := range OUTER_WIDTH {
