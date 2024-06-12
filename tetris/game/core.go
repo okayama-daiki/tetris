@@ -1,12 +1,14 @@
 package game
 
 import (
+	_ "embed"
 	"fmt"
 	"image/color"
 
+	"github.com/hajimehoshi/bitmapfont/v3"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/okayama-daiki/tetris/tetris/audio"
 )
@@ -23,6 +25,8 @@ const (
 const (
 	CELL_SIZE = 25
 )
+
+var fontFace = text.NewGoXFace(bitmapfont.Face)
 
 type Game struct {
 	PutPieces            int
@@ -97,6 +101,7 @@ func (g *Game) Update() error {
 				g.Fragments[y][x] = NewFragment(clearedColors[i][x], x, y)
 			}
 		}
+		g.PutPieces++
 		g.CurrentMino = g.MinoBag.Next()
 		if g.IsGameOver() {
 			g.restart()
@@ -179,6 +184,7 @@ func (g *Game) Update() error {
 				g.Fragments[y][x] = NewFragment(clearedColors[i][x], x, y)
 			}
 		}
+		g.PutPieces++
 		g.CurrentMino = g.MinoBag.Next()
 		if g.IsGameOver() {
 			g.restart()
@@ -403,14 +409,56 @@ func (g *Game) drawNext(screen *ebiten.Image, offsetX, offsetY float32) {
 	}
 }
 
+func (g *Game) drawController(screen *ebiten.Image, offsetX, offsetY float32) {
+	option := &text.DrawOptions{LayoutOptions: text.LayoutOptions{LineSpacing: 20}}
+	option.GeoM.Translate(float64(offsetX), float64(offsetY))
+	text.Draw(screen,
+		`
+←      : Move Left
+→      : Move Right
+Z      : Rotate Left
+X(↑)   : Rotate Right
+C      : Hold
+Space  : Hard Drop
+↓      : Soft Drop
+`,
+		fontFace,
+		option,
+	)
+}
+
+func (g *Game) drawScore(screen *ebiten.Image, offsetX, offsetY float32) {
+	option := &text.DrawOptions{LayoutOptions: text.LayoutOptions{LineSpacing: 20}}
+	option.GeoM.Translate(float64(offsetX), float64(offsetY))
+	text.Draw(screen,
+		fmt.Sprintf(
+			`
+Pieces : %d, %.02f/s
+Lines  : %d
+Time   : %d:%02d.%02d
+`,
+			g.PutPieces,
+			float32(g.PutPieces)/float32(g.FrameCount/10)*6,
+			g.ClearedLines,
+			g.FrameCount/3600,
+			g.FrameCount%3600/60,
+			g.FrameCount%60,
+		),
+		fontFace,
+		option,
+	)
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(BACKGROUND_COLOR)
 
 	g.drawHold(screen, 0, 2*CELL_SIZE)
 	g.drawGameBoard(screen, 6*CELL_SIZE, 0)
 	g.drawNext(screen, (6+OUTER_WIDTH)*CELL_SIZE, 2*CELL_SIZE)
+	g.drawController(screen, 30, 10*CELL_SIZE)
+	g.drawScore(screen, 30, 18*CELL_SIZE)
 
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("fps: %f\ntps: %f", ebiten.ActualFPS(), ebiten.ActualTPS()))
+	// ebitenutil.DebugPrint(screen, fmt.Sprintf("fps: %f\ntps: %f", ebiten.ActualFPS(), ebiten.ActualTPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
