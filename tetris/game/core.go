@@ -34,6 +34,7 @@ type Game struct {
 	FrameCount           int
 	NormalDroppingSpeed  int
 	CurrentDroppingSpeed int
+	level                int
 	Board                Board
 	CurrentMino          Mino
 	HoldingMino          HoldingMino
@@ -44,6 +45,7 @@ type Game struct {
 
 func (g *Game) restart() {
 	g.AudioPlayer.PlayClear()
+	g.PutPieces = 0
 	g.ClearedLines = 0
 	g.FrameCount = 0
 	g.Fragments = [OUTER_HEIGHT][OUTER_WIDTH]Fragment{}
@@ -65,7 +67,14 @@ func (g *Game) Update() error {
 	g.FrameCount++
 	g.CurrentMino.FrameCount++
 	g.CurrentMino.LockDown.UpdateTimer()
-	g.CurrentDroppingSpeed = g.NormalDroppingSpeed
+	g.level = g.ClearedLines/10 + 1
+	if g.level > 110 {
+		g.level = 110
+	}
+	g.CurrentDroppingSpeed = int((0.8 - float64(g.level-1)*0.05) * 60)
+	if g.CurrentDroppingSpeed < 1 {
+		g.CurrentDroppingSpeed = 1
+	}
 
 	if inpututil.KeyPressDuration(ebiten.KeyR) == 30 {
 		g.restart()
@@ -436,6 +445,7 @@ func (g *Game) drawScore(screen *ebiten.Image, offsetX, offsetY float32) {
 Pieces : %d, %.02f/s
 Lines  : %d
 Time   : %d:%02d.%02d
+Level	 : %d
 `,
 			g.PutPieces,
 			float32(g.PutPieces)/float32(g.FrameCount/10)*6,
@@ -443,6 +453,7 @@ Time   : %d:%02d.%02d
 			g.FrameCount/3600,
 			g.FrameCount%3600/60,
 			g.FrameCount%60,
+			g.level,
 		),
 		fontFace,
 		option,
