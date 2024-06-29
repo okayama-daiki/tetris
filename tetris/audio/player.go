@@ -29,7 +29,7 @@ var (
 
 func init() {
 	var err error
-	audioData, err = os.ReadFile("assets/bgm/theme.mp3")
+	audioData, err = os.ReadFile("assets/bgm/tetriiis.mp3")
 	if err != nil {
 		panic(err)
 	}
