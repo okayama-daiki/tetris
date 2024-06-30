@@ -2,10 +2,11 @@ package audio
 
 import (
 	"bytes"
-	"os"
 
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/mp3"
+	"github.com/okayama-daiki/tetris/assets/bgm"
+	"github.com/okayama-daiki/tetris/assets/se"
 )
 
 type Player struct {
@@ -18,45 +19,8 @@ type Player struct {
 	holdAudioPlayer     *audio.Player
 }
 
-var (
-	audioData         []byte
-	hardDropAudioData []byte
-	clearAudioData    []byte
-	rotateAudioData   []byte
-	moveAudioData     []byte
-	holdAudioData     []byte
-)
-
-func init() {
-	var err error
-	audioData, err = os.ReadFile("assets/bgm/tetriiis.mp3")
-	if err != nil {
-		panic(err)
-	}
-	hardDropAudioData, err = os.ReadFile("assets/se/hard-drop.mp3")
-	if err != nil {
-		panic(err)
-	}
-	clearAudioData, err = os.ReadFile("assets/se/clear.mp3")
-	if err != nil {
-		panic(err)
-	}
-	rotateAudioData, err = os.ReadFile("assets/se/rotate.mp3")
-	if err != nil {
-		panic(err)
-	}
-	moveAudioData, err = os.ReadFile("assets/se/move.mp3")
-	if err != nil {
-		panic(err)
-	}
-	holdAudioData, err = os.ReadFile("assets/se/hold.mp3")
-	if err != nil {
-		panic(err)
-	}
-}
-
 func NewPlayer(audioContext *audio.Context) (*Player, error) {
-	s, err := mp3.DecodeWithoutResampling(bytes.NewReader(audioData))
+	s, err := mp3.DecodeWithoutResampling(bytes.NewReader(bgm.Tetriiis))
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +29,7 @@ func NewPlayer(audioContext *audio.Context) (*Player, error) {
 		return nil, err
 	}
 
-	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(hardDropAudioData))
+	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(se.HardDrop))
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +38,7 @@ func NewPlayer(audioContext *audio.Context) (*Player, error) {
 		return nil, err
 	}
 
-	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(clearAudioData))
+	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(se.Clear))
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +47,7 @@ func NewPlayer(audioContext *audio.Context) (*Player, error) {
 		return nil, err
 	}
 
-	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(rotateAudioData))
+	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(se.Rotate))
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +56,7 @@ func NewPlayer(audioContext *audio.Context) (*Player, error) {
 		return nil, err
 	}
 
-	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(moveAudioData))
+	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(se.Move))
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +65,7 @@ func NewPlayer(audioContext *audio.Context) (*Player, error) {
 		return nil, err
 	}
 
-	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(holdAudioData))
+	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(se.Hold))
 	if err != nil {
 		return nil, err
 	}
