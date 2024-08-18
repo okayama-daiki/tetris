@@ -145,7 +145,7 @@ func (g *Game) Update() error {
 
 	// Rotate right
 	if inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) || inpututil.IsKeyJustPressed(ebiten.KeyX) {
-		for _, nextMino := range g.CurrentMino.RotateRightSRS() {
+		for nextMino := range g.CurrentMino.RotateRightSRS() {
 			if !g.Board.isCollided(nextMino) {
 				g.AudioPlayer.PlayRotate()
 				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
@@ -159,7 +159,7 @@ func (g *Game) Update() error {
 
 	// Rotate left
 	if inpututil.IsKeyJustPressed(ebiten.KeyZ) {
-		for _, nextMino := range g.CurrentMino.RotateLeftSSR() {
+		for nextMino := range g.CurrentMino.RotateLeftSSR() {
 			if !g.Board.isCollided(nextMino) {
 				g.AudioPlayer.PlayRotate()
 				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME

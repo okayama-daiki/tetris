@@ -2,6 +2,7 @@ package game
 
 import (
 	"image/color"
+	"iter"
 	"math/rand"
 )
 
@@ -67,45 +68,42 @@ func (m Mino) rotateLeft() Mino {
 	return m
 }
 
-// Return all possible rotations of the mino in the Super Rotation System
-//
-// TODO: This function must be rewritten as `func(yield func(Mino) bool)` ...
-// and used as Range Over Function after Go 1.23 is released
-func (m Mino) RotateRightSRS() []Mino {
+// Yield all possible rotations of the mino in the Super Rotation System
+func (m Mino) RotateRightSRS() iter.Seq[Mino] {
 	switch m.Name {
 	case "T", "L", "J", "S", "Z":
 		switch m.Angle {
 		case 0:
-			return []Mino{
-				m.rotateRight(),
-				m.rotateRight().MoveLeft(),
-				m.rotateRight().MoveLeft().MoveUp(),
-				m.rotateRight().MoveDown().MoveDown(),
-				m.rotateRight().MoveLeft().MoveDown().MoveDown(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateRight()) &&
+					yield(m.rotateRight().MoveRight()) &&
+					yield(m.rotateRight().MoveRight().MoveUp()) &&
+					yield(m.rotateRight().MoveDown().MoveDown()) &&
+					yield(m.rotateRight().MoveRight().MoveDown().MoveDown())
 			}
 		case 1:
-			return []Mino{
-				m.rotateRight(),
-				m.rotateRight().MoveRight(),
-				m.rotateRight().MoveRight().MoveDown(),
-				m.rotateRight().MoveUp().MoveUp(),
-				m.rotateRight().MoveRight().MoveUp().MoveUp(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateRight()) &&
+					yield(m.rotateRight().MoveRight()) &&
+					yield(m.rotateRight().MoveRight().MoveDown()) &&
+					yield(m.rotateRight().MoveUp().MoveUp()) &&
+					yield(m.rotateRight().MoveRight().MoveUp().MoveUp())
 			}
 		case 2:
-			return []Mino{
-				m.rotateRight(),
-				m.rotateRight().MoveRight(),
-				m.rotateRight().MoveRight().MoveUp(),
-				m.rotateRight().MoveDown().MoveDown(),
-				m.rotateRight().MoveRight().MoveDown().MoveDown(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateRight()) &&
+					yield(m.rotateRight().MoveRight()) &&
+					yield(m.rotateRight().MoveRight().MoveUp()) &&
+					yield(m.rotateRight().MoveDown().MoveDown()) &&
+					yield(m.rotateRight().MoveRight().MoveDown().MoveDown())
 			}
 		case 3:
-			return []Mino{
-				m.rotateRight(),
-				m.rotateRight().MoveLeft(),
-				m.rotateRight().MoveLeft().MoveDown(),
-				m.rotateRight().MoveUp().MoveUp(),
-				m.rotateRight().MoveLeft().MoveUp().MoveUp(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateRight()) &&
+					yield(m.rotateRight().MoveLeft()) &&
+					yield(m.rotateRight().MoveLeft().MoveDown()) &&
+					yield(m.rotateRight().MoveUp().MoveUp()) &&
+					yield(m.rotateRight().MoveLeft().MoveUp().MoveUp())
 			}
 
 		default:
@@ -114,83 +112,87 @@ func (m Mino) RotateRightSRS() []Mino {
 	case "I":
 		switch m.Angle {
 		case 0:
-			return []Mino{
-				m.rotateRight(),
-				m.rotateRight().MoveLeft().MoveLeft(),
-				m.rotateRight().MoveRight(),
-				m.rotateRight().MoveLeft().MoveLeft().MoveDown(),
-				m.rotateRight().MoveRight().MoveUp().MoveUp(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateRight()) &&
+					yield(m.rotateRight().MoveLeft().MoveLeft()) &&
+					yield(m.rotateRight().MoveRight()) &&
+					yield(m.rotateRight().MoveLeft().MoveLeft().MoveDown()) &&
+					yield(m.rotateRight().MoveRight().MoveUp().MoveUp())
+
 			}
 		case 1:
-			return []Mino{
-				m.rotateRight(),
-				m.rotateRight().MoveLeft(),
-				m.rotateRight().MoveRight().MoveRight(),
-				m.rotateRight().MoveLeft().MoveUp().MoveUp(),
-				m.rotateRight().MoveRight().MoveRight().MoveDown(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateRight()) &&
+					yield(m.rotateRight().MoveLeft()) &&
+					yield(m.rotateRight().MoveRight().MoveRight()) &&
+					yield(m.rotateRight().MoveLeft().MoveUp().MoveUp()) &&
+					yield(m.rotateRight().MoveRight().MoveRight().MoveDown())
+
 			}
 		case 2:
-			return []Mino{
-				m.rotateRight(),
-				m.rotateRight().MoveRight().MoveRight(),
-				m.rotateRight().MoveLeft(),
-				m.rotateRight().MoveRight().MoveRight().MoveUp(),
-				m.rotateRight().MoveLeft().MoveDown().MoveDown(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateRight()) &&
+					yield(m.rotateRight().MoveRight().MoveRight()) &&
+					yield(m.rotateRight().MoveLeft()) &&
+					yield(m.rotateRight().MoveRight().MoveRight().MoveUp()) &&
+					yield(m.rotateRight().MoveLeft().MoveDown().MoveDown())
 			}
 		case 3:
-			return []Mino{
-				m.rotateRight(),
-				m.rotateRight().MoveLeft().MoveLeft(),
-				m.rotateRight().MoveRight(),
-				m.rotateRight().MoveLeft().MoveDown().MoveDown(),
-				m.rotateRight().MoveRight().MoveUp().MoveUp(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateRight()) &&
+					yield(m.rotateRight().MoveLeft().MoveLeft()) &&
+					yield(m.rotateRight().MoveRight()) &&
+					yield(m.rotateRight().MoveLeft().MoveDown().MoveDown()) &&
+					yield(m.rotateRight().MoveRight().MoveUp().MoveUp())
 			}
 		default:
 			panic("Invalid angle")
 		}
 	case "O":
-		return []Mino{m}
+		return func(yield func(Mino) bool) {
+			yield(m)
+		}
 	default:
 		panic("Invalid mino name")
 	}
 }
 
-// Return all possible rotations of the mino in the Super Rotation System
-func (m Mino) RotateLeftSSR() []Mino {
+// Yield all possible rotations of the mino in the Super Rotation System
+func (m Mino) RotateLeftSSR() iter.Seq[Mino] {
 	switch m.Name {
 	case "T", "L", "J", "S", "Z":
 		switch m.Angle {
 		case 0:
-			return []Mino{
-				m.rotateLeft(),
-				m.rotateLeft().MoveRight(),
-				m.rotateLeft().MoveRight().MoveUp(),
-				m.rotateLeft().MoveDown().MoveDown(),
-				m.rotateLeft().MoveRight().MoveDown().MoveDown(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateLeft()) &&
+					yield(m.rotateLeft().MoveRight()) &&
+					yield(m.rotateLeft().MoveRight().MoveUp()) &&
+					yield(m.rotateLeft().MoveDown().MoveDown()) &&
+					yield(m.rotateLeft().MoveRight().MoveDown().MoveDown())
 			}
 		case 1:
-			return []Mino{
-				m.rotateLeft(),
-				m.rotateLeft().MoveRight(),
-				m.rotateLeft().MoveRight().MoveDown(),
-				m.rotateLeft().MoveUp().MoveUp(),
-				m.rotateLeft().MoveRight().MoveUp().MoveUp(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateLeft()) &&
+					yield(m.rotateLeft().MoveRight()) &&
+					yield(m.rotateLeft().MoveRight().MoveDown()) &&
+					yield(m.rotateLeft().MoveUp().MoveUp()) &&
+					yield(m.rotateLeft().MoveRight().MoveUp().MoveUp())
 			}
 		case 2:
-			return []Mino{
-				m.rotateLeft(),
-				m.rotateLeft().MoveLeft(),
-				m.rotateLeft().MoveLeft().MoveUp(),
-				m.rotateLeft().MoveDown().MoveDown(),
-				m.rotateLeft().MoveLeft().MoveDown().MoveDown(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateLeft()) &&
+					yield(m.rotateLeft().MoveLeft()) &&
+					yield(m.rotateLeft().MoveLeft().MoveUp()) &&
+					yield(m.rotateLeft().MoveDown().MoveDown()) &&
+					yield(m.rotateLeft().MoveLeft().MoveDown().MoveDown())
 			}
 		case 3:
-			return []Mino{
-				m.rotateLeft(),
-				m.rotateLeft().MoveLeft(),
-				m.rotateLeft().MoveLeft().MoveDown(),
-				m.rotateLeft().MoveUp().MoveUp(),
-				m.rotateLeft().MoveLeft().MoveUp().MoveUp(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateLeft()) &&
+					yield(m.rotateLeft().MoveLeft()) &&
+					yield(m.rotateLeft().MoveLeft().MoveDown()) &&
+					yield(m.rotateLeft().MoveUp().MoveUp()) &&
+					yield(m.rotateLeft().MoveLeft().MoveUp().MoveUp())
 			}
 		default:
 			panic("Invalid angle")
@@ -198,42 +200,44 @@ func (m Mino) RotateLeftSSR() []Mino {
 	case "I":
 		switch m.Angle {
 		case 0:
-			return []Mino{
-				m.rotateLeft(),
-				m.rotateLeft().MoveLeft(),
-				m.rotateLeft().MoveRight().MoveRight(),
-				m.rotateLeft().MoveLeft().MoveUp().MoveUp(),
-				m.rotateLeft().MoveRight().MoveRight().MoveDown(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateLeft()) &&
+					yield(m.rotateLeft().MoveLeft()) &&
+					yield(m.rotateLeft().MoveRight().MoveRight()) &&
+					yield(m.rotateLeft().MoveLeft().MoveUp().MoveUp()) &&
+					yield(m.rotateLeft().MoveRight().MoveRight().MoveDown())
 			}
 		case 1:
-			return []Mino{
-				m.rotateLeft(),
-				m.rotateLeft().MoveRight().MoveRight(),
-				m.rotateLeft().MoveLeft(),
-				m.rotateLeft().MoveRight().MoveRight().MoveUp(),
-				m.rotateLeft().MoveLeft().MoveDown().MoveDown(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateLeft()) &&
+					yield(m.rotateLeft().MoveRight().MoveRight()) &&
+					yield(m.rotateLeft().MoveLeft()) &&
+					yield(m.rotateLeft().MoveRight().MoveRight().MoveUp()) &&
+					yield(m.rotateLeft().MoveLeft().MoveDown().MoveDown())
 			}
 		case 2:
-			return []Mino{
-				m.rotateLeft(),
-				m.rotateLeft().MoveRight().MoveRight(),
-				m.rotateLeft().MoveLeft(),
-				m.rotateLeft().MoveRight().MoveRight().MoveUp(),
-				m.rotateLeft().MoveLeft().MoveDown().MoveDown(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateLeft()) &&
+					yield(m.rotateLeft().MoveRight().MoveRight()) &&
+					yield(m.rotateLeft().MoveLeft()) &&
+					yield(m.rotateLeft().MoveRight().MoveRight().MoveUp()) &&
+					yield(m.rotateLeft().MoveLeft().MoveDown().MoveDown())
 			}
 		case 3:
-			return []Mino{
-				m.rotateLeft(),
-				m.rotateLeft().MoveRight(),
-				m.rotateLeft().MoveLeft().MoveLeft(),
-				m.rotateLeft().MoveLeft().MoveLeft().MoveDown(),
-				m.rotateLeft().MoveRight().MoveUp().MoveUp(),
+			return func(yield func(Mino) bool) {
+				_ = yield(m.rotateLeft()) &&
+					yield(m.rotateLeft().MoveRight()) &&
+					yield(m.rotateLeft().MoveLeft().MoveLeft()) &&
+					yield(m.rotateLeft().MoveLeft().MoveLeft().MoveDown()) &&
+					yield(m.rotateLeft().MoveRight().MoveUp().MoveUp())
 			}
 		default:
 			panic("Invalid angle")
 		}
 	case "O":
-		return []Mino{m}
+		return func(yield func(Mino) bool) {
+			yield(m)
+		}
 	default:
 		panic("Invalid mino name")
 	}
