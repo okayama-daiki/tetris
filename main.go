@@ -33,27 +33,13 @@ func main() {
 	ebiten.SetWindowSize(600, 600)
 	ebiten.SetWindowTitle("EbiTetris")
 
-	minoBag := game.MinoBag{}
-	currentMino := minoBag.Next()
-	holdingMino := game.HoldingMino{Available: true}
-	board := game.NewBoard()
-
 	audioPlayer, err := audio.NewPlayer(ebitenAudio.NewContext(44100))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var game = game.Game{
-		MinoBag:              minoBag,
-		CurrentMino:          currentMino,
-		HoldingMino:          holdingMino,
-		Board:                board,
-		NormalDroppingSpeed:  60,
-		CurrentDroppingSpeed: 60,
-		AudioPlayer:          audioPlayer,
-	}
-
-	if err := ebiten.RunGame(&game); err != nil {
+	var game = game.NewGame(audioPlayer)
+	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
 
