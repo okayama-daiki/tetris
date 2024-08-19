@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	Wall             = color.RGBA{108, 122, 137, 255}
+	WALL_COLOR       = color.RGBA{108, 122, 137, 255}
 	BACKGROUND_COLOR = color.RGBA{5, 5, 5, 255}
 	LINE_COLOR       = color.RGBA{75, 75, 75, 255}
 	BORDER_COLOR     = color.RGBA{240, 240, 240, 255}
@@ -16,11 +16,11 @@ type Board [OUTER_HEIGHT][OUTER_WIDTH]color.Color
 func NewBoard() Board {
 	board := Board{}
 	for y := range OUTER_HEIGHT - 1 {
-		board[y][0] = Wall
-		board[y][OUTER_WIDTH-1] = Wall
+		board[y][0] = WALL_COLOR
+		board[y][OUTER_WIDTH-1] = WALL_COLOR
 	}
 	for x := range OUTER_WIDTH {
-		board[OUTER_HEIGHT-1][x] = Wall
+		board[OUTER_HEIGHT-1][x] = WALL_COLOR
 	}
 	return board
 }
@@ -46,7 +46,7 @@ func (b *Board) isCollided(mino Mino) bool {
 			if ny < 0 || ny >= OUTER_HEIGHT || nx < 0 || nx >= OUTER_WIDTH {
 				return true
 			}
-			if b[ny][nx] != nil || b[ny][nx] == Wall {
+			if b[ny][nx] != nil || b[ny][nx] == WALL_COLOR {
 				return true
 			}
 		}
@@ -73,7 +73,7 @@ func (b *Board) ClearLines() (clearedLines []int, clearedColors [][12]color.Colo
 
 	newBoard := NewBoard()
 
-	for y := MARGIN + INNER_HEIGHT - SENTINEL; y >= 0; y-- {
+	for y := MARGIN + INNER_HEIGHT - SENTINEL_SIZE; y >= 0; y-- {
 		if b.IsFilled(y) {
 			clearedLines = append(clearedLines, y)
 			clearedColors = append(clearedColors, b[y])

@@ -10,6 +10,16 @@ var (
 	GHOST_COLOR = color.RGBA{30, 30, 30, 127}
 )
 
+var (
+	PURPLE = color.RGBA{106, 50, 165, 255}
+	YELLOW = color.RGBA{255, 213, 0, 255}
+	ORANGE = color.RGBA{255, 121, 28, 255}
+	BLUE   = color.RGBA{6, 119, 186, 255}
+	GREEN  = color.RGBA{114, 203, 59, 255}
+	RED    = color.RGBA{212, 42, 52, 255}
+	CYAN   = color.RGBA{31, 195, 205, 255}
+)
+
 const (
 	DEFAULT_BACKLASH_FRAME           = 30
 	DEFAULT_EXTENDED_PLACEMENT_COUNT = 15
@@ -423,49 +433,49 @@ var (
 var (
 	T = Mino{
 		Name:          "T",
-		Color:         color.RGBA{106, 50, 165, 255}, // Purple
+		Color:         PURPLE,
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
 
 	O = Mino{
 		Name:          "O",
-		Color:         color.RGBA{255, 213, 0, 255}, // Yellow
+		Color:         YELLOW,
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
 
 	L = Mino{
 		Name:          "L",
-		Color:         color.RGBA{255, 121, 28, 255}, // Orange
+		Color:         ORANGE,
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
 
 	J = Mino{
 		Name:          "J",
-		Color:         color.RGBA{6, 119, 186, 255}, // Blue
+		Color:         BLUE,
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
 
 	S = Mino{
 		Name:          "S",
-		Color:         color.RGBA{114, 203, 59, 255}, // Green
+		Color:         GREEN,
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
 
 	Z = Mino{
 		Name:          "Z",
-		Color:         color.RGBA{212, 42, 52, 255}, // Red
+		Color:         RED,
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}
 
 	I = Mino{
 		Name:          "I",
-		Color:         color.RGBA{31, 195, 205, 255}, // Cyan
+		Color:         CYAN,
 		Angle:         0,
 		BacklashFrame: DEFAULT_BACKLASH_FRAME,
 	}

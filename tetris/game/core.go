@@ -14,16 +14,22 @@ import (
 )
 
 const (
-	INNER_HEIGHT = 20
-	INNER_WIDTH  = 10
-	SENTINEL     = 1
-	MARGIN       = 3
-	OUTER_HEIGHT = MARGIN + INNER_HEIGHT + SENTINEL
-	OUTER_WIDTH  = SENTINEL + INNER_WIDTH + SENTINEL
+	INNER_HEIGHT  = 20
+	INNER_WIDTH   = 10
+	SENTINEL_SIZE = 1
+	CELL_SIZE     = 25
+	MARGIN        = 3
+	OUTER_HEIGHT  = MARGIN + INNER_HEIGHT + SENTINEL_SIZE
+	OUTER_WIDTH   = SENTINEL_SIZE + INNER_WIDTH + SENTINEL_SIZE
 )
 
 const (
-	CELL_SIZE = 25
+	KEY_LONG_PRESS_WAIT_TIME = 9
+	KEY_PRESS_DURATION       = 2
+)
+
+const (
+	MAX_LEVEL = 110
 )
 
 var fontFace = text.NewGoXFace(bitmapfont.Face)
@@ -78,14 +84,8 @@ func (g *Game) Update() error {
 	g.FrameCount++
 	g.CurrentMino.FrameCount++
 	g.CurrentMino.LockDown.UpdateTimer()
-	g.level = g.ClearedLines/10 + 1
-	if g.level > 110 {
-		g.level = 110
-	}
-	g.CurrentDroppingSpeed = int((0.8 - float64(g.level-1)*0.05) * 60)
-	if g.CurrentDroppingSpeed < 1 {
-		g.CurrentDroppingSpeed = 1
-	}
+	g.level = min(g.ClearedLines/10+1, MAX_LEVEL)
+	g.CurrentDroppingSpeed = max(int((0.8-float64(g.level-1)*0.05)*60), 1)
 
 	if inpututil.KeyPressDuration(ebiten.KeyR) == 30 {
 		g.restart()
@@ -131,7 +131,8 @@ func (g *Game) Update() error {
 	}
 
 	// Move Left
-	if inpututil.KeyPressDuration(ebiten.KeyLeft) > 9 && inpututil.KeyPressDuration(ebiten.KeyLeft)%2 == 0 || inpututil.IsKeyJustPressed(ebiten.KeyLeft) {
+	if inpututil.KeyPressDuration(ebiten.KeyLeft) > KEY_LONG_PRESS_WAIT_TIME &&
+		inpututil.KeyPressDuration(ebiten.KeyLeft)%KEY_PRESS_DURATION == 0 || inpututil.IsKeyJustPressed(ebiten.KeyLeft) {
 		nextMino := g.CurrentMino.MoveLeft()
 		if !g.Board.isCollided(nextMino) {
 			g.AudioPlayer.PlayMove()
@@ -143,7 +144,8 @@ func (g *Game) Update() error {
 	}
 
 	// Move Right
-	if inpututil.KeyPressDuration(ebiten.KeyRight) > 9 && inpututil.KeyPressDuration(ebiten.KeyRight)%2 == 0 || inpututil.IsKeyJustPressed(ebiten.KeyRight) {
+	if inpututil.KeyPressDuration(ebiten.KeyRight) > KEY_LONG_PRESS_WAIT_TIME &&
+		inpututil.KeyPressDuration(ebiten.KeyRight)%KEY_PRESS_DURATION == 0 || inpututil.IsKeyJustPressed(ebiten.KeyRight) {
 		nextMino := g.CurrentMino.MoveRight()
 		if !g.Board.isCollided(nextMino) {
 			g.AudioPlayer.PlayMove()
@@ -184,7 +186,7 @@ func (g *Game) Update() error {
 
 	// Soft drop
 	if inpututil.KeyPressDuration(ebiten.KeyDown) > 0 {
-		g.CurrentDroppingSpeed = g.NormalDroppingSpeed / 20
+		g.CurrentDroppingSpeed = max(g.NormalDroppingSpeed/20, 1)
 	}
 
 	switch {
@@ -307,7 +309,7 @@ func (g *Game) drawGameBoard(screen *ebiten.Image, offsetX, offsetY float32) {
 			screen,
 			CELL_SIZE,
 			float32(y*CELL_SIZE)+2,
-			float32(INNER_WIDTH+SENTINEL)*CELL_SIZE,
+			float32(INNER_WIDTH+SENTINEL_SIZE)*CELL_SIZE,
 			float32(y*CELL_SIZE)+2,
 			0.5,
 			LINE_COLOR,
@@ -316,7 +318,7 @@ func (g *Game) drawGameBoard(screen *ebiten.Image, offsetX, offsetY float32) {
 	}
 
 	// Vertical Lines
-	for x := SENTINEL; x < OUTER_WIDTH; x++ {
+	for x := SENTINEL_SIZE; x < OUTER_WIDTH; x++ {
 		strokeLine(
 			screen,
 			float32(x*CELL_SIZE),
@@ -342,9 +344,9 @@ func (g *Game) drawGameBoard(screen *ebiten.Image, offsetX, offsetY float32) {
 	)
 	strokeLine(
 		screen,
-		float32(SENTINEL+INNER_WIDTH)*CELL_SIZE,
+		float32(SENTINEL_SIZE+INNER_WIDTH)*CELL_SIZE,
 		MARGIN*CELL_SIZE,
-		float32(SENTINEL+INNER_WIDTH)*CELL_SIZE,
+		float32(SENTINEL_SIZE+INNER_WIDTH)*CELL_SIZE,
 		float32(MARGIN+INNER_HEIGHT)*CELL_SIZE,
 		2,
 		BORDER_COLOR,
@@ -354,7 +356,7 @@ func (g *Game) drawGameBoard(screen *ebiten.Image, offsetX, offsetY float32) {
 		screen,
 		CELL_SIZE,
 		float32(MARGIN+INNER_HEIGHT)*CELL_SIZE,
-		float32(INNER_WIDTH+SENTINEL)*CELL_SIZE,
+		float32(INNER_WIDTH+SENTINEL_SIZE)*CELL_SIZE,
 		float32(MARGIN+INNER_HEIGHT)*CELL_SIZE,
 		2,
 		BORDER_COLOR,
@@ -363,7 +365,7 @@ func (g *Game) drawGameBoard(screen *ebiten.Image, offsetX, offsetY float32) {
 
 	// Fixed minos
 	for y := 0; y < MARGIN+INNER_HEIGHT; y++ {
-		for x := SENTINEL; x < INNER_WIDTH+SENTINEL; x++ {
+		for x := SENTINEL_SIZE; x < INNER_WIDTH+SENTINEL_SIZE; x++ {
 			c := g.Board[y][x]
 			if c != nil {
 				drawBlock(screen, x, y, c, CELL_SIZE)
