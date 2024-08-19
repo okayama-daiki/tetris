@@ -37,11 +37,13 @@ var fontFace = text.NewGoXFace(bitmapfont.Face)
 func NewGame(audioPlayer *audio.Player) *Game {
 	minoBag := MinoBag{}
 	return &Game{
-		MinoBag:     minoBag,
-		Board:       NewBoard(),
-		CurrentMino: minoBag.Next(),
-		HoldingMino: HoldingMino{Available: true},
-		AudioPlayer: audioPlayer,
+		MinoBag:              minoBag,
+		Board:                NewBoard(),
+		CurrentMino:          minoBag.Next(),
+		HoldingMino:          HoldingMino{Available: true},
+		AudioPlayer:          audioPlayer,
+		CurrentDroppingSpeed: 60,
+		NormalDroppingSpeed:  60,
 	}
 }
 
