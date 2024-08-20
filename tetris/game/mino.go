@@ -25,470 +25,425 @@ const (
 	DEFAULT_EXTENDED_PLACEMENT_COUNT = 15
 )
 
+type Angle int
+
+const (
+	Angle0 Angle = iota
+	Angle90
+	Angle180
+	Angle270
+)
+
 type Shape [][]int
 
 // Note: the Mino is fully fixed if IsGrounded is true and BacklashFrame is 0 or ExtendedPlacementCounter is 0
-type Mino struct {
-	Name          string
-	Color         color.Color
-	Y             int
-	X             int
-	Angle         int
-	FrameCount    int
-	LockDown      LockDown
-	IsGrounded    bool
-	BacklashFrame int // Allow a little time for movement / rotation after grounding
+type BaseMino struct {
+	baseShape Shape
+	y         int
+	x         int
+	angle     Angle
+	color     color.Color
+}
+
+func NewBaseMino(shape Shape, color color.Color) BaseMino {
+	return BaseMino{
+		baseShape: shape,
+		angle:     Angle0,
+		color:     color,
+	}
+}
+
+func (m BaseMino) Initialize() AbstractMino {
+	m.y, m.x = 0, 4
+	m.angle = Angle0
+	return m
+}
+
+// Shape returns the current shape of the mino
+func (m BaseMino) Shape() Shape {
+	shape := make(Shape, len(m.baseShape))
+	for i := range len(m.baseShape) {
+		shape[i] = make([]int, len(m.baseShape[i]))
+		copy(shape[i], m.baseShape[i])
+	}
+	for range m.angle {
+		shape = Rotate(shape)
+	}
+	return shape
+}
+
+func (m BaseMino) Color() color.Color {
+	return m.color
+}
+
+func (m BaseMino) X() int {
+	return m.x
+}
+
+func (m BaseMino) Y() int {
+	return m.y
+}
+
+func (m BaseMino) MoveRight() AbstractMino {
+	m.x++
+	return m
+}
+
+func (m BaseMino) MoveLeft() AbstractMino {
+	m.x--
+	return m
+}
+
+func (m BaseMino) MoveDown() AbstractMino {
+	m.y++
+	return m
+}
+
+func (m BaseMino) MoveUp() AbstractMino {
+	m.y--
+	return m
+}
+
+func (m BaseMino) rotateRight() AbstractMino {
+	m.angle = (m.angle + 1) % 4
+	return m
+}
+
+func (m BaseMino) rotateLeft() AbstractMino {
+	m.angle = (m.angle + 3) % 4
+	return m
+}
+
+// RotateRightSRS() yields the rotated minos according to the Super Rotation System.
+//
+// Note: This implementation is expected to use for the minos except I and O.
+func (m BaseMino) RotateRightSRS() iter.Seq[AbstractMino] {
+	switch m.angle {
+	case Angle0:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateRight()) &&
+				yield(m.rotateRight().MoveRight()) &&
+				yield(m.rotateRight().MoveRight().MoveUp()) &&
+				yield(m.rotateRight().MoveDown().MoveDown()) &&
+				yield(m.rotateRight().MoveRight().MoveDown().MoveDown())
+		}
+	case Angle90:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateRight()) &&
+				yield(m.rotateRight().MoveRight()) &&
+				yield(m.rotateRight().MoveRight().MoveDown()) &&
+				yield(m.rotateRight().MoveUp().MoveUp()) &&
+				yield(m.rotateRight().MoveRight().MoveUp().MoveUp())
+		}
+	case Angle180:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateRight()) &&
+				yield(m.rotateRight().MoveRight()) &&
+				yield(m.rotateRight().MoveRight().MoveUp()) &&
+				yield(m.rotateRight().MoveDown().MoveDown()) &&
+				yield(m.rotateRight().MoveRight().MoveDown().MoveDown())
+		}
+	case Angle270:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateRight()) &&
+				yield(m.rotateRight().MoveLeft()) &&
+				yield(m.rotateRight().MoveLeft().MoveDown()) &&
+				yield(m.rotateRight().MoveUp().MoveUp()) &&
+				yield(m.rotateRight().MoveLeft().MoveUp().MoveUp())
+		}
+
+	default:
+		panic("Invalid angle")
+	}
+}
+
+func (m BaseMino) RotateLeftSSR() iter.Seq[AbstractMino] {
+	switch m.angle {
+	case Angle0:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateLeft()) &&
+				yield(m.rotateLeft().MoveRight()) &&
+				yield(m.rotateLeft().MoveRight().MoveUp()) &&
+				yield(m.rotateLeft().MoveDown().MoveDown()) &&
+				yield(m.rotateLeft().MoveRight().MoveDown().MoveDown())
+		}
+	case Angle90:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateLeft()) &&
+				yield(m.rotateLeft().MoveRight()) &&
+				yield(m.rotateLeft().MoveRight().MoveDown()) &&
+				yield(m.rotateLeft().MoveUp().MoveUp()) &&
+				yield(m.rotateLeft().MoveRight().MoveUp().MoveUp())
+		}
+	case Angle180:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateLeft()) &&
+				yield(m.rotateLeft().MoveLeft()) &&
+				yield(m.rotateLeft().MoveLeft().MoveUp()) &&
+				yield(m.rotateLeft().MoveDown().MoveDown()) &&
+				yield(m.rotateLeft().MoveLeft().MoveDown().MoveDown())
+		}
+	case Angle270:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateLeft()) &&
+				yield(m.rotateLeft().MoveLeft()) &&
+				yield(m.rotateLeft().MoveLeft().MoveDown()) &&
+				yield(m.rotateLeft().MoveUp().MoveUp()) &&
+				yield(m.rotateLeft().MoveLeft().MoveUp().MoveUp())
+		}
+	default:
+		panic("Invalid angle")
+	}
+}
+
+type AbstractMino interface {
+	Initialize() AbstractMino
+	MoveRight() AbstractMino
+	MoveLeft() AbstractMino
+	MoveDown() AbstractMino
+	MoveUp() AbstractMino
+	rotateRight() AbstractMino
+	rotateLeft() AbstractMino
+	RotateRightSRS() iter.Seq[AbstractMino]
+	RotateLeftSSR() iter.Seq[AbstractMino]
+	Shape() Shape
+	Color() color.Color
+	X() int
+	Y() int
 }
 
 type HoldingMino struct {
-	Mino
+	AbstractMino
 	Available bool
 }
 
-func (m *Mino) Shape() Shape {
-	switch m.Name {
-	case "T":
-		return Ts[m.Angle]
-	case "O":
-		return Os[m.Angle]
-	case "L":
-		return Ls[m.Angle]
-	case "J":
-		return Js[m.Angle]
-	case "S":
-		return Ss[m.Angle]
-	case "Z":
-		return Zs[m.Angle]
-	case "I":
-		return Is[m.Angle]
-	default:
-		panic("Invalid mino name")
+type MinoI struct {
+	BaseMino
+}
+
+func NewMinoI() MinoI {
+	return MinoI{
+		BaseMino: NewBaseMino(
+			[][]int{
+				{0, 0, 0, 0},
+				{1, 1, 1, 1},
+				{0, 0, 0, 0},
+				{0, 0, 0, 0},
+			},
+			CYAN,
+		),
 	}
 }
 
-// Rotate the mino 90 degrees clockwise
-func (m Mino) rotateRight() Mino {
-	m.Angle = (m.Angle + 1) % 4
-	return m
+type MinoJ struct {
+	BaseMino
 }
 
-// Rotate the mino 90 degrees counterclockwise
-func (m Mino) rotateLeft() Mino {
-	m.Angle = (m.Angle + 3) % 4
-	return m
-}
-
-// Yield all possible rotations of the mino in the Super Rotation System
-func (m Mino) RotateRightSRS() iter.Seq[Mino] {
-	switch m.Name {
-	case "T", "L", "J", "S", "Z":
-		switch m.Angle {
-		case 0:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateRight()) &&
-					yield(m.rotateRight().MoveRight()) &&
-					yield(m.rotateRight().MoveRight().MoveUp()) &&
-					yield(m.rotateRight().MoveDown().MoveDown()) &&
-					yield(m.rotateRight().MoveRight().MoveDown().MoveDown())
-			}
-		case 1:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateRight()) &&
-					yield(m.rotateRight().MoveRight()) &&
-					yield(m.rotateRight().MoveRight().MoveDown()) &&
-					yield(m.rotateRight().MoveUp().MoveUp()) &&
-					yield(m.rotateRight().MoveRight().MoveUp().MoveUp())
-			}
-		case 2:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateRight()) &&
-					yield(m.rotateRight().MoveRight()) &&
-					yield(m.rotateRight().MoveRight().MoveUp()) &&
-					yield(m.rotateRight().MoveDown().MoveDown()) &&
-					yield(m.rotateRight().MoveRight().MoveDown().MoveDown())
-			}
-		case 3:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateRight()) &&
-					yield(m.rotateRight().MoveLeft()) &&
-					yield(m.rotateRight().MoveLeft().MoveDown()) &&
-					yield(m.rotateRight().MoveUp().MoveUp()) &&
-					yield(m.rotateRight().MoveLeft().MoveUp().MoveUp())
-			}
-
-		default:
-			panic("Invalid angle")
-		}
-	case "I":
-		switch m.Angle {
-		case 0:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateRight()) &&
-					yield(m.rotateRight().MoveLeft().MoveLeft()) &&
-					yield(m.rotateRight().MoveRight()) &&
-					yield(m.rotateRight().MoveLeft().MoveLeft().MoveDown()) &&
-					yield(m.rotateRight().MoveRight().MoveUp().MoveUp())
-
-			}
-		case 1:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateRight()) &&
-					yield(m.rotateRight().MoveLeft()) &&
-					yield(m.rotateRight().MoveRight().MoveRight()) &&
-					yield(m.rotateRight().MoveLeft().MoveUp().MoveUp()) &&
-					yield(m.rotateRight().MoveRight().MoveRight().MoveDown())
-
-			}
-		case 2:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateRight()) &&
-					yield(m.rotateRight().MoveRight().MoveRight()) &&
-					yield(m.rotateRight().MoveLeft()) &&
-					yield(m.rotateRight().MoveRight().MoveRight().MoveUp()) &&
-					yield(m.rotateRight().MoveLeft().MoveDown().MoveDown())
-			}
-		case 3:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateRight()) &&
-					yield(m.rotateRight().MoveLeft().MoveLeft()) &&
-					yield(m.rotateRight().MoveRight()) &&
-					yield(m.rotateRight().MoveLeft().MoveDown().MoveDown()) &&
-					yield(m.rotateRight().MoveRight().MoveUp().MoveUp())
-			}
-		default:
-			panic("Invalid angle")
-		}
-	case "O":
-		return func(yield func(Mino) bool) {
-			yield(m)
-		}
-	default:
-		panic("Invalid mino name")
+func NewMinoJ() MinoJ {
+	return MinoJ{
+		BaseMino: NewBaseMino(
+			[][]int{
+				{1, 0, 0},
+				{1, 1, 1},
+				{0, 0, 0},
+			},
+			BLUE,
+		),
 	}
 }
 
-// Yield all possible rotations of the mino in the Super Rotation System
-func (m Mino) RotateLeftSSR() iter.Seq[Mino] {
-	switch m.Name {
-	case "T", "L", "J", "S", "Z":
-		switch m.Angle {
-		case 0:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateLeft()) &&
-					yield(m.rotateLeft().MoveRight()) &&
-					yield(m.rotateLeft().MoveRight().MoveUp()) &&
-					yield(m.rotateLeft().MoveDown().MoveDown()) &&
-					yield(m.rotateLeft().MoveRight().MoveDown().MoveDown())
-			}
-		case 1:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateLeft()) &&
-					yield(m.rotateLeft().MoveRight()) &&
-					yield(m.rotateLeft().MoveRight().MoveDown()) &&
-					yield(m.rotateLeft().MoveUp().MoveUp()) &&
-					yield(m.rotateLeft().MoveRight().MoveUp().MoveUp())
-			}
-		case 2:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateLeft()) &&
-					yield(m.rotateLeft().MoveLeft()) &&
-					yield(m.rotateLeft().MoveLeft().MoveUp()) &&
-					yield(m.rotateLeft().MoveDown().MoveDown()) &&
-					yield(m.rotateLeft().MoveLeft().MoveDown().MoveDown())
-			}
-		case 3:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateLeft()) &&
-					yield(m.rotateLeft().MoveLeft()) &&
-					yield(m.rotateLeft().MoveLeft().MoveDown()) &&
-					yield(m.rotateLeft().MoveUp().MoveUp()) &&
-					yield(m.rotateLeft().MoveLeft().MoveUp().MoveUp())
-			}
-		default:
-			panic("Invalid angle")
+type MinoL struct {
+	BaseMino
+}
+
+func NewMinoL() MinoL {
+	return MinoL{
+		BaseMino: NewBaseMino(
+			[][]int{
+				{0, 0, 1},
+				{1, 1, 1},
+				{0, 0, 0},
+			},
+			ORANGE,
+		),
+	}
+}
+
+type MinoO struct {
+	BaseMino
+}
+
+func NewMinoO() MinoO {
+	return MinoO{
+		BaseMino: NewBaseMino(
+			[][]int{
+				{1, 1},
+				{1, 1},
+			},
+			YELLOW,
+		),
+	}
+}
+
+type MinoS struct {
+	BaseMino
+}
+
+func NewMinoS() MinoS {
+	return MinoS{
+		BaseMino: NewBaseMino(
+			[][]int{
+				{0, 1, 1},
+				{1, 1, 0},
+				{0, 0, 0},
+			},
+			GREEN,
+		),
+	}
+}
+
+type MinoT struct {
+	BaseMino
+}
+
+func NewMinoT() MinoT {
+	return MinoT{
+		BaseMino: NewBaseMino(
+			[][]int{
+				{0, 1, 0},
+				{1, 1, 1},
+				{0, 0, 0},
+			},
+			PURPLE,
+		),
+	}
+}
+
+type MinoZ struct {
+	BaseMino
+}
+
+func NewMinoZ() MinoZ {
+	return MinoZ{
+		BaseMino: NewBaseMino(
+			[][]int{
+				{1, 1, 0},
+				{0, 1, 1},
+				{0, 0, 0},
+			},
+			RED,
+		),
+	}
+}
+
+func (m MinoI) RotateRightSRS() iter.Seq[AbstractMino] {
+	switch m.angle {
+	case Angle0:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateRight()) &&
+				yield(m.rotateRight().MoveLeft().MoveLeft()) &&
+				yield(m.rotateRight().MoveRight()) &&
+				yield(m.rotateRight().MoveLeft().MoveLeft().MoveDown()) &&
+				yield(m.rotateRight().MoveRight().MoveUp().MoveUp())
+
 		}
-	case "I":
-		switch m.Angle {
-		case 0:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateLeft()) &&
-					yield(m.rotateLeft().MoveLeft()) &&
-					yield(m.rotateLeft().MoveRight().MoveRight()) &&
-					yield(m.rotateLeft().MoveLeft().MoveUp().MoveUp()) &&
-					yield(m.rotateLeft().MoveRight().MoveRight().MoveDown())
-			}
-		case 1:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateLeft()) &&
-					yield(m.rotateLeft().MoveRight().MoveRight()) &&
-					yield(m.rotateLeft().MoveLeft()) &&
-					yield(m.rotateLeft().MoveRight().MoveRight().MoveUp()) &&
-					yield(m.rotateLeft().MoveLeft().MoveDown().MoveDown())
-			}
-		case 2:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateLeft()) &&
-					yield(m.rotateLeft().MoveRight().MoveRight()) &&
-					yield(m.rotateLeft().MoveLeft()) &&
-					yield(m.rotateLeft().MoveRight().MoveRight().MoveUp()) &&
-					yield(m.rotateLeft().MoveLeft().MoveDown().MoveDown())
-			}
-		case 3:
-			return func(yield func(Mino) bool) {
-				_ = yield(m.rotateLeft()) &&
-					yield(m.rotateLeft().MoveRight()) &&
-					yield(m.rotateLeft().MoveLeft().MoveLeft()) &&
-					yield(m.rotateLeft().MoveLeft().MoveLeft().MoveDown()) &&
-					yield(m.rotateLeft().MoveRight().MoveUp().MoveUp())
-			}
-		default:
-			panic("Invalid angle")
+	case Angle90:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateRight()) &&
+				yield(m.rotateRight().MoveLeft()) &&
+				yield(m.rotateRight().MoveRight().MoveRight()) &&
+				yield(m.rotateRight().MoveLeft().MoveUp().MoveUp()) &&
+				yield(m.rotateRight().MoveRight().MoveRight().MoveDown())
+
 		}
-	case "O":
-		return func(yield func(Mino) bool) {
-			yield(m)
+	case Angle180:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateRight()) &&
+				yield(m.rotateRight().MoveRight().MoveRight()) &&
+				yield(m.rotateRight().MoveLeft()) &&
+				yield(m.rotateRight().MoveRight().MoveRight().MoveUp()) &&
+				yield(m.rotateRight().MoveLeft().MoveDown().MoveDown())
+		}
+	case Angle270:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateRight()) &&
+				yield(m.rotateRight().MoveLeft().MoveLeft()) &&
+				yield(m.rotateRight().MoveRight()) &&
+				yield(m.rotateRight().MoveLeft().MoveDown().MoveDown()) &&
+				yield(m.rotateRight().MoveRight().MoveUp().MoveUp())
 		}
 	default:
-		panic("Invalid mino name")
+		panic("Invalid angle")
 	}
 }
 
-func (m Mino) MoveRight() Mino {
-	m.X++
-	return m
+func (m MinoI) RotateLeftSSR() iter.Seq[AbstractMino] {
+	switch m.angle {
+	case Angle0:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateLeft()) &&
+				yield(m.rotateLeft().MoveLeft()) &&
+				yield(m.rotateLeft().MoveRight().MoveRight()) &&
+				yield(m.rotateLeft().MoveLeft().MoveUp().MoveUp()) &&
+				yield(m.rotateLeft().MoveRight().MoveRight().MoveDown())
+		}
+	case Angle90:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateLeft()) &&
+				yield(m.rotateLeft().MoveRight().MoveRight()) &&
+				yield(m.rotateLeft().MoveLeft()) &&
+				yield(m.rotateLeft().MoveRight().MoveRight().MoveUp()) &&
+				yield(m.rotateLeft().MoveLeft().MoveDown().MoveDown())
+		}
+	case Angle180:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateLeft()) &&
+				yield(m.rotateLeft().MoveRight().MoveRight()) &&
+				yield(m.rotateLeft().MoveLeft()) &&
+				yield(m.rotateLeft().MoveRight().MoveRight().MoveUp()) &&
+				yield(m.rotateLeft().MoveLeft().MoveDown().MoveDown())
+		}
+	case Angle270:
+		return func(yield func(AbstractMino) bool) {
+			_ = yield(m.rotateLeft()) &&
+				yield(m.rotateLeft().MoveRight()) &&
+				yield(m.rotateLeft().MoveLeft().MoveLeft()) &&
+				yield(m.rotateLeft().MoveLeft().MoveLeft().MoveDown()) &&
+				yield(m.rotateLeft().MoveRight().MoveUp().MoveUp())
+		}
+	default:
+		panic("Invalid angle")
+	}
 }
 
-func (m Mino) MoveLeft() Mino {
-	m.X--
-	return m
+func (m MinoO) RotateRightSRS() iter.Seq[AbstractMino] {
+	return func(yield func(AbstractMino) bool) {
+		yield(m)
+	}
 }
 
-func (m Mino) MoveDown() Mino {
-	m.Y++
-	return m
+func (m MinoO) RotateLeftSSR() iter.Seq[AbstractMino] {
+	return func(yield func(AbstractMino) bool) {
+		yield(m)
+	}
 }
 
-func (m Mino) MoveUp() Mino {
-	m.Y--
-	return m
+var Minos = []AbstractMino{
+	NewMinoI(),
+	NewMinoJ(),
+	NewMinoL(),
+	NewMinoO(),
+	NewMinoS(),
+	NewMinoT(),
+	NewMinoZ(),
 }
-
-var (
-	Ts = [4]Shape{
-		[][]int{
-			{0, 1, 0},
-			{1, 1, 1},
-			{0, 0, 0},
-		},
-		[][]int{
-			{0, 1, 0},
-			{0, 1, 1},
-			{0, 1, 0},
-		},
-		[][]int{
-			{0, 0, 0},
-			{1, 1, 1},
-			{0, 1, 0},
-		},
-		[][]int{
-			{0, 1, 0},
-			{1, 1, 0},
-			{0, 1, 0},
-		},
-	}
-	Os = [4]Shape{
-		[][]int{
-			{1, 1},
-			{1, 1},
-		},
-		[][]int{
-			{1, 1},
-			{1, 1},
-		},
-		[][]int{
-			{1, 1},
-			{1, 1},
-		},
-		[][]int{
-			{1, 1},
-			{1, 1},
-		},
-	}
-	Ls = [4]Shape{
-		[][]int{
-			{0, 0, 1},
-			{1, 1, 1},
-			{0, 0, 0},
-		},
-		[][]int{
-			{0, 1, 0},
-			{0, 1, 0},
-			{0, 1, 1},
-		},
-		[][]int{
-			{0, 0, 0},
-			{1, 1, 1},
-			{1, 0, 0},
-		},
-		[][]int{
-			{1, 1, 0},
-			{0, 1, 0},
-			{0, 1, 0},
-		},
-	}
-	Js = [4]Shape{
-		[][]int{
-			{1, 0, 0},
-			{1, 1, 1},
-			{0, 0, 0},
-		},
-		[][]int{
-			{0, 1, 1},
-			{0, 1, 0},
-			{0, 1, 0},
-		},
-		[][]int{
-			{0, 0, 0},
-			{1, 1, 1},
-			{0, 0, 1},
-		},
-		[][]int{
-			{0, 1, 0},
-			{0, 1, 0},
-			{1, 1, 0},
-		},
-	}
-	Ss = [4]Shape{
-		[][]int{
-			{0, 1, 1},
-			{1, 1, 0},
-			{0, 0, 0},
-		},
-		[][]int{
-			{0, 1, 0},
-			{0, 1, 1},
-			{0, 0, 1},
-		},
-		[][]int{
-			{0, 0, 0},
-			{0, 1, 1},
-			{1, 1, 0},
-		},
-		[][]int{
-			{1, 0, 0},
-			{1, 1, 0},
-			{0, 1, 0},
-		},
-	}
-	Zs = [4]Shape{
-		[][]int{
-			{1, 1, 0},
-			{0, 1, 1},
-			{0, 0, 0},
-		},
-		[][]int{
-			{0, 1, 0},
-			{1, 1, 0},
-			{1, 0, 0},
-		},
-		[][]int{
-			{0, 0, 0},
-			{1, 1, 0},
-			{0, 1, 1},
-		},
-		[][]int{
-			{0, 1, 0},
-			{1, 1, 0},
-			{1, 0, 0},
-		},
-	}
-	Is = [4]Shape{
-		[][]int{
-			{0, 0, 0, 0},
-			{1, 1, 1, 1},
-			{0, 0, 0, 0},
-			{0, 0, 0, 0},
-		},
-		[][]int{
-			{0, 0, 1, 0},
-			{0, 0, 1, 0},
-			{0, 0, 1, 0},
-			{0, 0, 1, 0},
-		},
-		[][]int{
-			{0, 0, 0, 0},
-			{0, 0, 0, 0},
-			{1, 1, 1, 1},
-			{0, 0, 0, 0},
-		},
-		[][]int{
-			{0, 1, 0, 0},
-			{0, 1, 0, 0},
-			{0, 1, 0, 0},
-			{0, 1, 0, 0},
-		},
-	}
-)
-
-var (
-	T = Mino{
-		Name:          "T",
-		Color:         PURPLE,
-		Angle:         0,
-		BacklashFrame: DEFAULT_BACKLASH_FRAME,
-	}
-
-	O = Mino{
-		Name:          "O",
-		Color:         YELLOW,
-		Angle:         0,
-		BacklashFrame: DEFAULT_BACKLASH_FRAME,
-	}
-
-	L = Mino{
-		Name:          "L",
-		Color:         ORANGE,
-		Angle:         0,
-		BacklashFrame: DEFAULT_BACKLASH_FRAME,
-	}
-
-	J = Mino{
-		Name:          "J",
-		Color:         BLUE,
-		Angle:         0,
-		BacklashFrame: DEFAULT_BACKLASH_FRAME,
-	}
-
-	S = Mino{
-		Name:          "S",
-		Color:         GREEN,
-		Angle:         0,
-		BacklashFrame: DEFAULT_BACKLASH_FRAME,
-	}
-
-	Z = Mino{
-		Name:          "Z",
-		Color:         RED,
-		Angle:         0,
-		BacklashFrame: DEFAULT_BACKLASH_FRAME,
-	}
-
-	I = Mino{
-		Name:          "I",
-		Color:         CYAN,
-		Angle:         0,
-		BacklashFrame: DEFAULT_BACKLASH_FRAME,
-	}
-
-	Minos = []Mino{T, O, L, J, S, Z, I}
-)
 
 type MinoBag struct {
-	queue []Mino
+	queue []AbstractMino
 }
 
 func (b *MinoBag) fill() {
-	bag := make([]Mino, len(Minos))
+	bag := make([]AbstractMino, len(Minos))
 	copy(bag, Minos)
 	for i := range len(bag) {
 		j := rand.Intn(i + 1)
@@ -497,66 +452,25 @@ func (b *MinoBag) fill() {
 	b.queue = append(b.queue, bag...)
 }
 
-func (b *MinoBag) Sniff(n int) []Mino {
+func (b *MinoBag) Sniff(n int) []AbstractMino {
 	if n <= 0 || n > 7 {
 		panic("n must be between 1 and 7")
 	}
 	if len(b.queue) < n {
 		b.fill()
 	}
-	preview := make([]Mino, n)
+	preview := make([]AbstractMino, n)
 	copy(preview, b.queue[:n])
 	return preview
 }
 
-func (b *MinoBag) Next() Mino {
+func (b *MinoBag) Next() AbstractMino {
 	if len(b.queue) == 0 {
 		b.fill()
 	}
-	mino := b.queue[0]
-	mino.Y, mino.X = 0, 4
+	mino := b.queue[0].Initialize()
 	b.queue = b.queue[1:]
 	return mino
-}
-
-// An implementation of the extended placement system
-//   - After a mino is grounded, `isGrounded` flag is set to true then the `timer` and `counter` are started
-//   - `timer` is incremented every frame until it reaches `DEFAULT_BACKLASH_FRAME`
-//   - If the mino is moved or rotated, `timer` is reset, but `counter` is incremented
-//   - The mino is fixed if `timer` reaches `DEFAULT_BACKLASH_FRAME` or
-//     `counter` reaches `DEFAULT_EXTENDED_PLACEMENT_COUNT` even though `timer` is less than `DEFAULT_BACKLASH_FRAME`
-type LockDown struct {
-	isGrounded bool
-	timer      int
-	counter    int
-}
-
-// Return true if the mino should not be moved or rotated anymore
-func (l *LockDown) IsFixed() bool {
-	return (l.isGrounded && l.timer >= DEFAULT_BACKLASH_FRAME) || l.counter >= DEFAULT_EXTENDED_PLACEMENT_COUNT
-}
-
-func (l *LockDown) Activate() {
-	l.isGrounded = true
-}
-
-func (l *LockDown) UpdateCounter() {
-	if l.isGrounded {
-		l.counter++
-		l.timer = 0
-	}
-}
-
-func (l *LockDown) UpdateTimer() {
-	if l.isGrounded {
-		l.timer++
-	}
-}
-
-func (l *LockDown) Reset() {
-	l.isGrounded = false
-	l.timer = 0
-	l.counter = 0
 }
 
 // A fragment is a small piece of a mino that is animated when it is cleared
@@ -602,4 +516,16 @@ func (f *Fragment) Color() color.Color {
 
 func calc(v, a, t float32) float32 {
 	return v*t + 0.5*a*t*t
+}
+
+func Rotate(shape Shape) Shape {
+	n := len(shape)
+	rotated := make([][]int, n)
+	for i := range n {
+		rotated[i] = make([]int, n)
+		for j := range n {
+			rotated[i][j] = shape[n-j-1][i]
+		}
+	}
+	return rotated
 }

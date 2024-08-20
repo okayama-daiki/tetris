@@ -1,7 +1,6 @@
 package game
 
 import (
-	_ "embed"
 	"fmt"
 	"image/color"
 
@@ -41,6 +40,7 @@ func NewGame(audioPlayer *audio.Player) *Game {
 		Board:                NewBoard(),
 		CurrentMino:          minoBag.Next(),
 		HoldingMino:          HoldingMino{Available: true},
+		CurrentLockDown:      NewLockDown(),
 		AudioPlayer:          audioPlayer,
 		CurrentDroppingSpeed: 60,
 		NormalDroppingSpeed:  60,
@@ -51,12 +51,14 @@ type Game struct {
 	PutPieces            int
 	ClearedLines         int
 	FrameCount           int
+	MinoFrameCount       int
 	NormalDroppingSpeed  int
 	CurrentDroppingSpeed int
 	level                int
 	Board                Board
-	CurrentMino          Mino
+	CurrentMino          AbstractMino
 	HoldingMino          HoldingMino
+	CurrentLockDown      *LockDown
 	MinoBag              MinoBag
 	Fragments            [OUTER_HEIGHT][OUTER_WIDTH]Fragment
 	AudioPlayer          *audio.Player
@@ -84,8 +86,8 @@ func (g *Game) restart() {
 func (g *Game) Update() error {
 	g.AudioPlayer.Update()
 	g.FrameCount++
-	g.CurrentMino.FrameCount++
-	g.CurrentMino.LockDown.UpdateTimer()
+	g.MinoFrameCount++
+	g.CurrentLockDown.UpdateTimer()
 	g.level = min(g.ClearedLines/10+1, MAX_LEVEL)
 	g.CurrentDroppingSpeed = max(int((0.8-float64(g.level-1)*0.05)*60), 1)
 
@@ -95,13 +97,12 @@ func (g *Game) Update() error {
 
 	// Hold
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) && g.HoldingMino.Available {
-		if g.HoldingMino.Mino.Name == "" {
-			g.HoldingMino.Mino = g.MinoBag.Next()
+		if g.HoldingMino.AbstractMino == nil {
+			g.HoldingMino.AbstractMino = g.MinoBag.Next()
 		}
 		g.AudioPlayer.PlayHold()
-		g.CurrentMino.Y, g.CurrentMino.X = 0, 4
-		g.CurrentMino.Angle = 0
-		g.HoldingMino.Mino, g.CurrentMino = g.CurrentMino, g.HoldingMino.Mino
+		g.CurrentMino = g.CurrentMino.Initialize()
+		g.HoldingMino.AbstractMino, g.CurrentMino = g.CurrentMino, g.HoldingMino.AbstractMino
 		g.HoldingMino.Available = false
 	}
 
@@ -111,8 +112,8 @@ func (g *Game) Update() error {
 		for nextMino := g.CurrentMino.MoveDown(); !g.Board.isCollided(nextMino); nextMino = nextMino.MoveDown() {
 			g.CurrentMino = nextMino
 		}
-		g.CurrentMino.IsGrounded = true
-		g.Board.Fix(&g.CurrentMino)
+		g.CurrentLockDown.Ground()
+		g.Board.Fix(g.CurrentMino)
 		clearedLines, clearedColors := g.Board.ClearLines()
 		if len(clearedLines) > 0 {
 			g.AudioPlayer.PlayClear()
@@ -129,7 +130,7 @@ func (g *Game) Update() error {
 			g.restart()
 		}
 		g.HoldingMino.Available = true
-
+		g.MinoFrameCount = 0
 	}
 
 	// Move Left
@@ -138,9 +139,8 @@ func (g *Game) Update() error {
 		nextMino := g.CurrentMino.MoveLeft()
 		if !g.Board.isCollided(nextMino) {
 			g.AudioPlayer.PlayMove()
-			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
-			nextMino.IsGrounded = false
-			nextMino.LockDown.UpdateCounter()
+			g.CurrentLockDown.UnGround()
+			g.CurrentLockDown.UpdateCounter()
 			g.CurrentMino = nextMino
 		}
 	}
@@ -151,9 +151,8 @@ func (g *Game) Update() error {
 		nextMino := g.CurrentMino.MoveRight()
 		if !g.Board.isCollided(nextMino) {
 			g.AudioPlayer.PlayMove()
-			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
-			nextMino.IsGrounded = false
-			nextMino.LockDown.UpdateCounter()
+			g.CurrentLockDown.UnGround()
+			g.CurrentLockDown.UpdateCounter()
 			g.CurrentMino = nextMino
 		}
 	}
@@ -163,9 +162,8 @@ func (g *Game) Update() error {
 		for nextMino := range g.CurrentMino.RotateRightSRS() {
 			if !g.Board.isCollided(nextMino) {
 				g.AudioPlayer.PlayRotate()
-				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
-				nextMino.IsGrounded = false
-				nextMino.LockDown.UpdateCounter()
+				g.CurrentLockDown.UnGround()
+				g.CurrentLockDown.UpdateCounter()
 				g.CurrentMino = nextMino
 				break
 			}
@@ -177,9 +175,8 @@ func (g *Game) Update() error {
 		for nextMino := range g.CurrentMino.RotateLeftSSR() {
 			if !g.Board.isCollided(nextMino) {
 				g.AudioPlayer.PlayRotate()
-				nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
-				nextMino.IsGrounded = false
-				nextMino.LockDown.UpdateCounter()
+				g.CurrentLockDown.UnGround()
+				g.CurrentLockDown.UpdateCounter()
 				g.CurrentMino = nextMino
 				break
 			}
@@ -193,11 +190,11 @@ func (g *Game) Update() error {
 
 	switch {
 
-	case g.CurrentMino.LockDown.IsFixed():
+	case g.CurrentLockDown.IsFixed():
 		for nextMino := g.CurrentMino.MoveDown(); !g.Board.isCollided(nextMino); nextMino = nextMino.MoveDown() {
 			g.CurrentMino = nextMino
 		}
-		g.Board.Fix(&g.CurrentMino)
+		g.Board.Fix(g.CurrentMino)
 		clearedLines, clearedColors := g.Board.ClearLines()
 		if len(clearedLines) > 0 {
 			g.AudioPlayer.PlayClear()
@@ -213,17 +210,17 @@ func (g *Game) Update() error {
 		if g.IsGameOver() {
 			g.restart()
 		}
+		g.CurrentLockDown.Reset()
 		g.HoldingMino.Available = true
+		g.MinoFrameCount = 0
 
-	case g.CurrentMino.FrameCount%g.CurrentDroppingSpeed == 0:
+	case g.MinoFrameCount%g.CurrentDroppingSpeed == 0:
 		nextMino := g.CurrentMino.MoveDown()
 		if !g.Board.isCollided(nextMino) {
-			nextMino.IsGrounded = false
-			nextMino.BacklashFrame = DEFAULT_BACKLASH_FRAME
-			nextMino.LockDown.Reset()
+			g.CurrentLockDown.Reset()
 			g.CurrentMino = nextMino
 		} else {
-			g.CurrentMino.LockDown.Activate()
+			g.CurrentLockDown.Activate()
 		}
 	}
 
@@ -231,7 +228,7 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) IsGameOver() bool {
-	return g.CurrentMino.Y == 0 && g.Board.isCollided(g.CurrentMino)
+	return g.CurrentMino.Y() == 0 && g.Board.isCollided(g.CurrentMino)
 }
 
 func MakeDrawFilledRect(offsetX, offsetY float32) func(screen *ebiten.Image, x, y, width, height float32, clr color.Color, antialias bool) {
@@ -384,7 +381,7 @@ func (g *Game) drawGameBoard(screen *ebiten.Image, offsetX, offsetY float32) {
 			if ghostMino.Shape()[dy][dx] == 0 {
 				continue
 			}
-			drawBlock(screen, ghostMino.X+dx, ghostMino.Y+dy, GHOST_COLOR, CELL_SIZE)
+			drawBlock(screen, ghostMino.X()+dx, ghostMino.Y()+dy, GHOST_COLOR, CELL_SIZE)
 		}
 	}
 
@@ -394,7 +391,7 @@ func (g *Game) drawGameBoard(screen *ebiten.Image, offsetX, offsetY float32) {
 			if g.CurrentMino.Shape()[dy][dx] == 0 {
 				continue
 			}
-			drawBlock(screen, g.CurrentMino.X+dx, g.CurrentMino.Y+dy, g.CurrentMino.Color, CELL_SIZE)
+			drawBlock(screen, g.CurrentMino.X()+dx, g.CurrentMino.Y()+dy, g.CurrentMino.Color(), CELL_SIZE)
 		}
 	}
 }
@@ -402,15 +399,15 @@ func (g *Game) drawGameBoard(screen *ebiten.Image, offsetX, offsetY float32) {
 func (g *Game) drawHold(screen *ebiten.Image, offsetX, offsetY float32) {
 	drawBlock := MakeDrawBlock(offsetX, offsetY)
 
-	if g.HoldingMino.Mino.Name != "" {
-		for dy := range len(g.HoldingMino.Mino.Shape()) {
-			for dx := range len(g.HoldingMino.Mino.Shape()[dy]) {
-				if g.HoldingMino.Mino.Shape()[dy][dx] == 0 {
+	if g.HoldingMino.AbstractMino != nil {
+		for dy := range len(g.HoldingMino.Shape()) {
+			for dx := range len(g.HoldingMino.Shape()[dy]) {
+				if g.HoldingMino.Shape()[dy][dx] == 0 {
 					continue
 				}
 				var c color.Color = GHOST_COLOR
 				if g.HoldingMino.Available {
-					c = g.HoldingMino.Mino.Color
+					c = g.HoldingMino.Color()
 				}
 				drawBlock(screen, dx+2, dy, c, CELL_SIZE)
 			}
@@ -427,7 +424,7 @@ func (g *Game) drawNext(screen *ebiten.Image, offsetX, offsetY float32) {
 				if mino.Shape()[dy][dx] == 0 {
 					continue
 				}
-				drawBlock(screen, dx, dy+i*3, mino.Color, CELL_SIZE)
+				drawBlock(screen, dx, dy+i*3, mino.Color(), CELL_SIZE)
 			}
 		}
 	}
