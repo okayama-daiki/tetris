@@ -20,112 +20,66 @@ type Player struct {
 }
 
 func NewPlayer(audioContext *audio.Context) (*Player, error) {
-	s, err := mp3.DecodeWithoutResampling(bytes.NewReader(bgm.Tetriiis))
-	if err != nil {
-		return nil, err
-	}
-	mainAudioPlayer, err := audioContext.NewPlayer(s)
-	if err != nil {
-		return nil, err
-	}
+	errors := make([]error, 0)
 
-	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(se.HardDrop))
-	if err != nil {
-		return nil, err
-	}
-	hardDropAudioPlayer, err := audioContext.NewPlayer(s)
-	if err != nil {
-		return nil, err
-	}
-
-	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(se.Clear))
-	if err != nil {
-		return nil, err
-	}
-	clearAudioPlayer, err := audioContext.NewPlayer(s)
-	if err != nil {
-		return nil, err
-	}
-
-	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(se.Rotate))
-	if err != nil {
-		return nil, err
-	}
-	rotateAudioPlayer, err := audioContext.NewPlayer(s)
-	if err != nil {
-		return nil, err
-	}
-
-	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(se.Move))
-	if err != nil {
-		return nil, err
-	}
-	moveAudioPlayer, err := audioContext.NewPlayer(s)
-	if err != nil {
-		return nil, err
-	}
-
-	s, err = mp3.DecodeWithoutResampling(bytes.NewReader(se.Hold))
-	if err != nil {
-		return nil, err
-	}
-	holdAudioPlayer, err := audioContext.NewPlayer(s)
-	if err != nil {
-		return nil, err
+	load := func(b []byte) *audio.Player {
+		s, err := mp3.DecodeWithoutResampling(bytes.NewReader(b))
+		if err != nil {
+			errors = append(errors, err)
+			return nil
+		}
+		player, err := audioContext.NewPlayer(s)
+		if err != nil {
+			errors = append(errors, err)
+			return nil
+		}
+		return player
 	}
 
 	player := &Player{
 		audioContext:        audioContext,
-		audioPlayer:         mainAudioPlayer,
-		hardDropAudioPlayer: hardDropAudioPlayer,
-		clearAudioPlayer:    clearAudioPlayer,
-		rotateAudioPlayer:   rotateAudioPlayer,
-		moveAudioPlayer:     moveAudioPlayer,
-		holdAudioPlayer:     holdAudioPlayer,
+		audioPlayer:         load(bgm.Theme),
+		hardDropAudioPlayer: load(se.HardDrop),
+		clearAudioPlayer:    load(se.Clear),
+		rotateAudioPlayer:   load(se.Rotate),
+		moveAudioPlayer:     load(se.Move),
+		holdAudioPlayer:     load(se.Hold),
+	}
+
+	if len(errors) > 0 {
+		return nil, errors[0]
 	}
 
 	player.audioPlayer.Play()
 	return player, nil
 }
 
-func (p *Player) PlayMove() {
-	err := p.moveAudioPlayer.Rewind()
+func _play(player *audio.Player) {
+	err := player.Rewind()
 	if err != nil {
 		panic(err)
 	}
-	p.moveAudioPlayer.Play()
+	player.Play()
+}
+
+func (p *Player) PlayMove() {
+	_play(p.moveAudioPlayer)
 }
 
 func (p *Player) PlayRotate() {
-	err := p.rotateAudioPlayer.Rewind()
-	if err != nil {
-		panic(err)
-	}
-	p.rotateAudioPlayer.Play()
+	_play(p.rotateAudioPlayer)
 }
 
 func (p *Player) PlayHold() {
-	err := p.holdAudioPlayer.Rewind()
-	if err != nil {
-		panic(err)
-	}
-	p.holdAudioPlayer.Play()
+	_play(p.holdAudioPlayer)
 }
 
 func (p *Player) PlayClear() {
-	err := p.clearAudioPlayer.Rewind()
-	if err != nil {
-		panic(err)
-	}
-	p.clearAudioPlayer.Play()
+	_play(p.clearAudioPlayer)
 }
 
 func (p *Player) PlayHardDrop() {
-	err := p.hardDropAudioPlayer.Rewind()
-	if err != nil {
-		panic(err)
-	}
-	p.hardDropAudioPlayer.Play()
+	_play(p.hardDropAudioPlayer)
 }
 
 func (p *Player) Update() {
