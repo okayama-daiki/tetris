@@ -49,3 +49,9 @@ You can visualize the result of profiling.
 ```bash
 go tool pprof -png mem.prof > out.png  # or cpu.prof
 ```
+
+## Deployment
+
+```zsh
+env GOOS=js GOARCH=wasm go build -o tetris.wasm github.com/okayama-daiki/tetris
+```
