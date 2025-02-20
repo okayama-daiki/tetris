@@ -1,6 +1,33 @@
-# tetris
+<br />
+<p align="center">
+  <a
+    href="https://okayama.daiki.dev/tetris/"
+    target="_blank"
+  >
+    <img src="./minogopher.webp" alt="MinoGopher" width="250" />
+  </a>
+</p>
 
+<h3 align="center">tetris</h3>
+
+<p align="center">
 A trivial implementation of Tetris in Golang
+</p>
+
+<div align="center">
+  <img
+    src="https://img.shields.io/github/license/okayama-daiki/tetris"
+    alt="License"
+  />
+  <img
+    src="https://img.shields.io/github/issues/okayama-daiki/tetris"
+    alt="Issues"
+  />
+  <img
+    src="https://img.shields.io/github/issues-pr/okayama-daiki/tetris"
+    alt="PRs"
+  />
+</div>
 
 ## Debug
 
